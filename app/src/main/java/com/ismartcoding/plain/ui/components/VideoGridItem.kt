@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,12 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ismartcoding.lib.extensions.formatBytes
 import com.ismartcoding.lib.extensions.formatDuration
 import com.ismartcoding.lib.helpers.CoroutinesHelper.coMain
 import com.ismartcoding.lib.helpers.CoroutinesHelper.withIO
+import com.ismartcoding.plain.R
 import com.ismartcoding.plain.data.DVideo
 import com.ismartcoding.plain.features.file.FileSortBy
 import com.ismartcoding.plain.features.media.VideoMediaStoreHelper
@@ -133,10 +133,10 @@ fun VideoGridItem(
             ) {
                 Icon(
                     modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .size(48.dp),
-                    imageVector = Icons.Outlined.PlayCircleOutline,
+                        Modifier
+                            .align(Alignment.Center)
+                            .size(48.dp),
+                    painter = painterResource(R.drawable.cast),
                     contentDescription = null,
                     tint = Color.LightGray
                 )
@@ -146,8 +146,8 @@ fun VideoGridItem(
         if (inSelectionMode) {
             Checkbox(
                 modifier =
-                Modifier
-                    .align(Alignment.TopStart),
+                    Modifier
+                        .align(Alignment.TopStart),
                 checked = selected,
                 onCheckedChange = {
                     dragSelectState.select(m.id)
@@ -156,14 +156,14 @@ fun VideoGridItem(
         if (showSize) {
             Box(
                 modifier =
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .background(MaterialTheme.colorScheme.darkMask()),
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .background(MaterialTheme.colorScheme.darkMask()),
             ) {
                 Text(
                     modifier =
-                    Modifier
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                        Modifier
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
                     text = if (setOf(FileSortBy.SIZE_ASC, FileSortBy.SIZE_DESC).contains(sort)) m.size.formatBytes() else m.duration.formatDuration(),
                     color = Color.White,
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),

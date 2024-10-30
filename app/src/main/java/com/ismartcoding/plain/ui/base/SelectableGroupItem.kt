@@ -86,7 +86,7 @@ fun SelectableGroupItem(
             }
             if (showMore) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_chevron_right),
+                    painter = painterResource(id = R.drawable.chevron_right),
                     modifier =
                         Modifier
                             .size(24.dp),

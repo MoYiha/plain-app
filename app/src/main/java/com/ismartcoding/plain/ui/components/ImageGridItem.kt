@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ismartcoding.lib.extensions.formatBytes
@@ -39,6 +38,7 @@ import com.ismartcoding.plain.ui.models.ImagesViewModel
 import com.ismartcoding.plain.ui.models.MediaPreviewData
 import com.ismartcoding.plain.ui.theme.darkMask
 import com.ismartcoding.plain.ui.theme.lightMask
+import com.ismartcoding.plain.R
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -134,7 +134,7 @@ fun ImageGridItem(
                     Modifier
                         .align(Alignment.Center)
                         .size(48.dp),
-                    imageVector = Icons.Outlined.PlayCircleOutline,
+                    painter = painterResource(R.drawable.cast),
                     contentDescription = null,
                     tint = Color.LightGray
                 )

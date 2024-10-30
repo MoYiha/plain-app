@@ -17,11 +17,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Redo
-import androidx.compose.material.icons.automirrored.outlined.Undo
-import androidx.compose.material.icons.automirrored.outlined.WrapText
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,7 +40,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
@@ -56,7 +50,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.ismartcoding.lib.extensions.cut
 import com.ismartcoding.lib.helpers.CoroutinesHelper.coMain
-import com.ismartcoding.lib.logcat.LogCat
 import com.ismartcoding.plain.R
 import com.ismartcoding.plain.data.TagRelationStub
 import com.ismartcoding.plain.enums.DataType
@@ -136,7 +129,7 @@ fun NotePage(
                     setSelection(0)
                 }
             }
-            snapshotFlow { mdEditorViewModel.textFieldState.text } .debounce(200)
+            snapshotFlow { mdEditorViewModel.textFieldState.text }.debounce(200)
                 .collectLatest { t ->
                     val isNew = id.isEmpty()
                     val text = t.toString()
@@ -220,7 +213,7 @@ fun NotePage(
                 actions = {
                     if (viewModel.editMode) {
                         PIconButton(
-                            icon = Icons.AutoMirrored.Outlined.Undo,
+                            icon = R.drawable.undo,
                             contentDescription = stringResource(id = R.string.undo),
                             enabled = mdEditorViewModel.textFieldState.undoState.canUndo,
                             tint = MaterialTheme.colorScheme.onSurface
@@ -228,7 +221,7 @@ fun NotePage(
                             mdEditorViewModel.textFieldState.undoState.undo()
                         }
                         PIconButton(
-                            icon = Icons.AutoMirrored.Outlined.Redo,
+                            icon = R.drawable.redo,
                             contentDescription = stringResource(id = R.string.redo),
                             enabled = mdEditorViewModel.textFieldState.undoState.canRedo,
                             tint = MaterialTheme.colorScheme.onSurface
@@ -237,7 +230,7 @@ fun NotePage(
                         }
 
                         PIconButton(
-                            icon = Icons.AutoMirrored.Outlined.WrapText,
+                            icon = R.drawable.wrap_text,
                             contentDescription = stringResource(R.string.wrap_content),
                             tint = MaterialTheme.colorScheme.onSurface,
                         ) {
@@ -249,7 +242,7 @@ fun NotePage(
                         }
                     }
                     PIconButton(
-                        icon = if (viewModel.editMode) painterResource(id = R.drawable.ic_markdown) else Icons.Outlined.Edit,
+                        icon = if (viewModel.editMode) R.drawable.markdown else R.drawable.square_pen,
                         contentDescription = stringResource(if (viewModel.editMode) R.string.view else R.string.edit),
                         tint = MaterialTheme.colorScheme.onSurface,
                     ) {
@@ -271,7 +264,7 @@ fun NotePage(
         content = { paddingValues ->
             if (viewModel.editMode) {
                 MdEditor(
-                    modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding()),
+                    modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding(), top = paddingValues.calculateTopPadding()),
                     viewModel = mdEditorViewModel,
                     scrollState = editorScrollState,
                     focusRequester = focusRequester
@@ -279,6 +272,7 @@ fun NotePage(
             } else {
                 LazyColumn(
                     modifier = Modifier
+                        .padding(top = paddingValues.calculateTopPadding())
                         .nestedScroll(scrollBehavior.nestedScrollConnection),
                     state = mdListState
                 ) {

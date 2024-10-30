@@ -20,12 +20,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.OpenInBrowser
-import androidx.compose.material.icons.outlined.SaveAs
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -87,6 +82,7 @@ import com.ismartcoding.plain.ui.page.tags.SelectTagsDialog
 import com.ismartcoding.plain.ui.theme.PlainTheme
 import com.ismartcoding.plain.ui.theme.buttonTextLarge
 import com.ismartcoding.plain.ui.theme.largeBlockButton
+import com.ismartcoding.plain.ui.theme.secondaryTextColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.launch
@@ -171,14 +167,22 @@ fun FeedEntryPage(
                 scrollBehavior = scrollBehavior,
                 actions = {
                     PIconButton(
-                        icon = Icons.AutoMirrored.Outlined.Label,
+                        icon = R.drawable.label,
                         contentDescription = stringResource(R.string.select_tags),
                         tint = MaterialTheme.colorScheme.onSurface,
                     ) {
                         viewModel.showSelectTagsDialog.value = true
                     }
                     PIconButton(
-                        icon = Icons.Outlined.Share,
+                        icon = R.drawable.chrome,
+                        contentDescription = stringResource(R.string.open_in_web),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    ) {
+                        val m = viewModel.item.value ?: return@PIconButton
+                        WebHelper.open(context, m.url)
+                    }
+                    PIconButton(
+                        icon = R.drawable.share_2,
                         contentDescription = stringResource(R.string.share),
                         tint = MaterialTheme.colorScheme.onSurface,
                     ) {
@@ -186,19 +190,9 @@ fun FeedEntryPage(
                         ShareHelper.shareText(context, m.title.let { it + "\n" } + m.url)
                     }
                     ActionButtonMoreWithMenu { dismiss ->
-                        PDropdownMenuItem(text = { Text(stringResource(R.string.open_in_web)) }, leadingIcon = {
-                            Icon(
-                                Icons.Outlined.OpenInBrowser,
-                                contentDescription = stringResource(id = R.string.open_in_web)
-                            )
-                        }, onClick = {
-                            dismiss()
-                            val m = viewModel.item.value ?: return@PDropdownMenuItem
-                            WebHelper.open(context, m.url)
-                        })
                         PDropdownMenuItem(text = { Text(stringResource(R.string.save_to_notes)) }, leadingIcon = {
                             Icon(
-                                Icons.Outlined.SaveAs,
+                                painter = painterResource(R.drawable.save),
                                 contentDescription = stringResource(id = R.string.save_to_notes)
                             )
                         }, onClick = {
@@ -215,7 +209,7 @@ fun FeedEntryPage(
                         })
                         PDropdownMenuItem(text = { Text(stringResource(R.string.copy_link)) }, leadingIcon = {
                             Icon(
-                                Icons.Outlined.Link,
+                                painter = painterResource(R.drawable.link),
                                 contentDescription = stringResource(id = R.string.copy_link)
                             )
                         }, onClick = {
@@ -234,6 +228,7 @@ fun FeedEntryPage(
         content = { paddingValues ->
             val m = viewModel.item.value ?: return@PScaffold
             PullToRefresh(
+                modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
                 refreshLayoutState = topRefreshLayoutState,
                 refreshContent = remember {
                     {
@@ -295,7 +290,7 @@ fun FeedEntryPage(
                                 text = arrayOf(viewModel.feed.value?.name ?: "", m.author, m.publishedAt.timeAgo()).filter {
                                     it.isNotEmpty()
                                 }.joinToString(" · "),
-                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, color = MaterialTheme.colorScheme.secondary),
+                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp, color = MaterialTheme.colorScheme.secondaryTextColor),
                             )
                             tags.forEach { tag ->
                                 Text(
@@ -323,7 +318,7 @@ fun FeedEntryPage(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(32.dp),
-                                        color = MaterialTheme.colorScheme.secondary,
+                                        color = MaterialTheme.colorScheme.secondaryTextColor,
                                         strokeWidth = 3.dp
                                     )
                                 }
@@ -360,7 +355,7 @@ fun FeedEntryPage(
                     }
 
                     item {
-                        BottomSpace(paddingValues)
+                        BottomSpace()
                     }
                 }
             }

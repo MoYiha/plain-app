@@ -17,11 +17,8 @@ fun HomeItemFlow(content: @Composable FlowRowScope.() -> Unit) {
     FlowRow(
         modifier =
             Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .fillMaxWidth(),
         maxItemsInEachRow = 3,
-        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
-        verticalArrangement = Arrangement.SpaceBetween,
         content = content,
     )
 }

@@ -3,6 +3,7 @@ package com.ismartcoding.plain.ui.page.feeds
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -63,7 +64,7 @@ fun FeedSettingsPage(
             options = options.map {
                 RadioDialogOption(
                     text = it.getText(),
-                    selected = it.value == viewModel.autoRefreshInterval.value,
+                    selected = it.value == viewModel.autoRefreshInterval.intValue,
                 ) {
                     viewModel.setAutoRefreshInterval(context, it.value)
                 }
@@ -81,8 +82,8 @@ fun FeedSettingsPage(
         topBar = {
             PTopAppBar(navController = navController, title = stringResource(id = R.string.settings))
         },
-    ) {
-        LazyColumn {
+    ) { paddingValues ->
+        LazyColumn(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
             item {
                 TopSpace()
             }
@@ -107,7 +108,7 @@ fun FeedSettingsPage(
                                 viewModel.showIntervalDialog.value = true
                             },
                             title = stringResource(id = R.string.auto_refresh_interval),
-                            value = FormatHelper.formatSeconds(viewModel.autoRefreshInterval.value),
+                            value = FormatHelper.formatSeconds(viewModel.autoRefreshInterval.intValue),
                             showMore = true,
                         )
                         PListItem(
@@ -145,6 +146,7 @@ fun ClearFeedsDialog(
 ) {
     val scope = rememberCoroutineScope()
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = {
             viewModel.showClearFeedsDialog.value = false
         },
@@ -154,10 +156,10 @@ fun ClearFeedsDialog(
                     scope.launch {
                         DialogHelper.showLoading()
                         withIO {
-                            if (viewModel.clearFeedItemsTs.value == 0L) {
+                            if (viewModel.clearFeedItemsTs.longValue == 0L) {
                                 viewModel.clearAllAsync()
                             } else {
-                                viewModel.clearByTimeAsync(viewModel.clearFeedItemsTs.value)
+                                viewModel.clearByTimeAsync(viewModel.clearFeedItemsTs.longValue)
                             }
                         }
                         DialogHelper.hideLoading()
@@ -184,13 +186,13 @@ fun ClearFeedsDialog(
         },
         text = {
             Column {
-                PDialogRadioRow(selected = viewModel.clearFeedItemsTs.value == 0L, onClick = {
-                    viewModel.clearFeedItemsTs.value = 0
+                PDialogRadioRow(selected = viewModel.clearFeedItemsTs.longValue == 0L, onClick = {
+                    viewModel.clearFeedItemsTs.longValue = 0
                 }, text = stringResource(id = R.string.all))
-                PDialogRadioRow(selected = viewModel.clearFeedItemsTs.value == Constants.ONE_DAY * 7, onClick = {
-                    viewModel.clearFeedItemsTs.value = Constants.ONE_DAY * 7
+                PDialogRadioRow(selected = viewModel.clearFeedItemsTs.longValue == Constants.ONE_DAY * 7, onClick = {
+                    viewModel.clearFeedItemsTs.longValue = Constants.ONE_DAY * 7
                 }, text = stringResource(id = R.string.older_than_7days_feed_items))
-                PDialogRadioRow(selected = viewModel.clearFeedItemsTs.value == Constants.ONE_DAY * 30, onClick = {
+                PDialogRadioRow(selected = viewModel.clearFeedItemsTs.longValue == Constants.ONE_DAY * 30, onClick = {
                     viewModel.clearFeedItemsTs.value = Constants.ONE_DAY * 30
                 }, text = stringResource(id = R.string.older_than_30days_feed_items))
             }

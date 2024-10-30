@@ -1,16 +1,14 @@
 package com.ismartcoding.plain.ui.page
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.WrapText
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Share
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -77,7 +75,7 @@ fun TextFilePage(
 
     PScaffold(
         topBar = {
-                 PTopAppBar(
+            PTopAppBar(
                 title = title.ifEmpty { path.getFilenameFromPath() },
                 navController = navController,
                 navigationIcon = {
@@ -98,7 +96,7 @@ fun TextFilePage(
                     if (viewModel.readOnly.value) {
                         if (type != TextFileType.APP_LOG.name) {
                             PIconButton(
-                                icon = Icons.Outlined.Edit,
+                                icon = R.drawable.square_pen,
                                 contentDescription = stringResource(R.string.edit),
                                 tint = MaterialTheme.colorScheme.onSurface,
                             ) {
@@ -107,7 +105,7 @@ fun TextFilePage(
                         }
                     } else {
                         PIconButton(
-                            icon = Icons.Outlined.Save,
+                            icon = R.drawable.save,
                             contentDescription = stringResource(R.string.save),
                             tint = MaterialTheme.colorScheme.onSurface,
                         ) {
@@ -123,14 +121,14 @@ fun TextFilePage(
                     }
                     if (setOf(TextFileType.APP_LOG.name, TextFileType.CHAT.name).contains(type)) {
                         PIconButton(
-                            icon = Icons.AutoMirrored.Outlined.WrapText,
+                            icon = R.drawable.wrap_text,
                             contentDescription = stringResource(R.string.wrap_content),
                             tint = MaterialTheme.colorScheme.onSurface,
                         ) {
                             viewModel.toggleWrapContent(context)
                         }
                         PIconButton(
-                            icon = Icons.Outlined.Share,
+                            icon = R.drawable.share_2,
                             contentDescription = stringResource(R.string.share),
                             tint = MaterialTheme.colorScheme.onSurface,
                         ) {
@@ -148,24 +146,26 @@ fun TextFilePage(
                 },
             )
         },
-        content = {
-            if (viewModel.isDataLoading.value || !viewModel.isEditorReady.value) {
-                NoDataColumn(loading = true)
-            }
-            if (viewModel.isDataLoading.value) {
-                return@PScaffold
-            }
-            AceEditor(
-                viewModel, scope,
-                EditorData(
-                    language = path.pathToAceMode(),
-                    wrapContent = viewModel.wrapContent.value,
-                    isDarkTheme = isDarkTheme,
-                    readOnly = viewModel.readOnly.value,
-                    gotoEnd = type == TextFileType.APP_LOG.name,
-                    content = viewModel.content.value
+        content = { paddingValues ->
+            Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+                if (viewModel.isDataLoading.value || !viewModel.isEditorReady.value) {
+                    NoDataColumn(loading = true)
+                }
+                if (viewModel.isDataLoading.value) {
+                    return@PScaffold
+                }
+                AceEditor(
+                    viewModel, scope,
+                    EditorData(
+                        language = path.pathToAceMode(),
+                        wrapContent = viewModel.wrapContent.value,
+                        isDarkTheme = isDarkTheme,
+                        readOnly = viewModel.readOnly.value,
+                        gotoEnd = type == TextFileType.APP_LOG.name,
+                        content = viewModel.content.value
+                    )
                 )
-            )
+            }
         },
     )
 }

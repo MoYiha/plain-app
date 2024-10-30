@@ -32,6 +32,7 @@ import com.ismartcoding.plain.enums.DataType
 import com.ismartcoding.plain.ui.base.VerticalSpace
 import com.ismartcoding.plain.ui.nav.navigateImages
 import com.ismartcoding.plain.ui.nav.navigateVideos
+import com.ismartcoding.plain.ui.nav.navigateAudio
 import com.ismartcoding.plain.ui.theme.listItemSubtitle
 import com.ismartcoding.plain.ui.theme.listItemTitle
 import com.ismartcoding.plain.ui.views.mergeimages.CombineBitmapTools
@@ -81,10 +82,17 @@ fun MediaBucketGridItem(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
             .clickable {
-                if (dataType == DataType.IMAGE) {
-                    navController.navigateImages(m.id)
-                } else if (dataType == DataType.VIDEO) {
-                    navController.navigateVideos(m.id)
+                when (dataType) {
+                    DataType.IMAGE -> {
+                        navController.navigateImages(m.id)
+                    }
+                    DataType.VIDEO -> {
+                        navController.navigateVideos(m.id)
+                    }
+                    DataType.AUDIO -> {
+                        navController.navigateAudio(m.id)
+                    }
+                    else -> {}
                 }
             },
     ) {

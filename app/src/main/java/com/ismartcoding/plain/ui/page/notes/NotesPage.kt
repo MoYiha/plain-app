@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,15 +19,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,15 +37,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.ismartcoding.lib.helpers.CoroutinesHelper
 import com.ismartcoding.lib.helpers.CoroutinesHelper.withIO
-import com.ismartcoding.lib.logcat.LogCat
 import com.ismartcoding.plain.R
 import com.ismartcoding.plain.features.locale.LocaleHelper
 import com.ismartcoding.plain.ui.base.ActionButtonMoreWithMenu
@@ -85,7 +80,7 @@ import com.ismartcoding.plain.ui.models.select
 import com.ismartcoding.plain.ui.models.showBottomActions
 import com.ismartcoding.plain.ui.models.toggleSelectAll
 import com.ismartcoding.plain.ui.models.toggleSelectMode
-import com.ismartcoding.plain.ui.nav.RouteName
+import com.ismartcoding.plain.ui.nav.Routing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -137,13 +132,9 @@ fun NotesPage(
         }
     }
 
-    val insetsController = WindowCompat.getInsetsController(window, view)
     LaunchedEffect(viewModel.selectMode.value) {
         if (viewModel.selectMode.value) {
             scrollBehavior.reset()
-            insetsController.hide(WindowInsetsCompat.Type.navigationBars())
-        } else {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
         }
     }
 
@@ -174,12 +165,6 @@ fun NotesPage(
         }
         scope.launch(Dispatchers.IO) {
             viewModel.loadAsync(tagsViewModel)
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
         }
     }
 
@@ -283,7 +268,7 @@ fun NotesPage(
                 visible = viewModel.showBottomActions(),
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }) {
-                SelectModeBottomActions(viewModel, tagsViewModel, tagsState)
+                NotesSelectModeBottomActions(viewModel, tagsViewModel, tagsState)
             }
         },
         floatingActionButton = if (viewModel.selectMode.value) null else {
@@ -291,11 +276,11 @@ fun NotesPage(
                 PDraggableElement {
                     FloatingActionButton(
                         onClick = {
-                            navController.navigate("${RouteName.NOTES.name}/create?tagId=${viewModel.tag.value?.id ?: ""}")
+                            navController.navigate(Routing.NotesCreate(viewModel.tag.value?.id ?: ""))
                         },
                     ) {
                         Icon(
-                            Icons.Outlined.Add,
+                            painter = painterResource(R.drawable.plus),
                             stringResource(R.string.add),
                         )
                     }
@@ -303,109 +288,112 @@ fun NotesPage(
             }
         },
     ) { paddingValues ->
-        if (!viewModel.selectMode.value) {
-            PScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                viewModel.tabs.value.forEachIndexed { index, s ->
-                    PFilterChip(
-                        modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            scope.launch {
-                                pagerState.scrollToPage(index)
+        Column(Modifier.padding(top = paddingValues.calculateTopPadding())) {
+
+            if (!viewModel.selectMode.value) {
+                PScrollableTabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    viewModel.tabs.value.forEachIndexed { index, s ->
+                        PFilterChip(
+                            modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                scope.launch {
+                                    pagerState.scrollToPage(index)
+                                }
+                            },
+                            label = {
+                                if (index < 2) {
+                                    Text(text = s.title + " (" + s.count + ")")
+                                } else {
+                                    Text(if (viewModel.queryText.value.isNotEmpty()) s.title else "${s.title} (${s.count})")
+                                }
                             }
-                        },
-                        label = {
-                            if (index < 2) {
-                                Text(text = s.title + " (" + s.count + ")")
-                            } else {
-                                Text(if (viewModel.queryText.value.isNotEmpty()) s.title else "${s.title} (${s.count})")
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
-        }
 
-        HorizontalPager(state = pagerState) { index ->
-            PullToRefresh(
-                refreshLayoutState = topRefreshLayoutState,
-            ) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+            HorizontalPager(state = pagerState) { index ->
+                PullToRefresh(
+                    refreshLayoutState = topRefreshLayoutState,
                 ) {
-                    if (itemsState.isNotEmpty()) {
-                        val scrollState = rememberLazyListState()
-                        scrollStateMap[index] = scrollState
-                        LazyColumnScrollbar(
-                            state = scrollState,
-                        ) {
-                            LazyColumn(
-                                Modifier
-                                    .fillMaxSize()
-                                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        if (itemsState.isNotEmpty()) {
+                            val scrollState = rememberLazyListState()
+                            scrollStateMap[index] = scrollState
+                            LazyColumnScrollbar(
                                 state = scrollState,
                             ) {
-                                item {
-                                    TopSpace()
-                                }
-                                items(itemsState, key = {
-                                    it.id
-                                }) { m ->
-                                    val tagIds = tagsMapState[m.id]?.map { it.tagId } ?: emptyList()
-                                    NoteListItem(
-                                        viewModel,
-                                        m,
-                                        tagsState.filter { tagIds.contains(it.id) },
-                                        onClick = {
-                                            if (viewModel.selectMode.value) {
-                                                viewModel.select(m.id)
-                                            } else {
-                                                navController.navigate("${RouteName.NOTES.name}/${m.id}")
+                                LazyColumn(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                                    state = scrollState,
+                                ) {
+                                    item {
+                                        TopSpace()
+                                    }
+                                    items(itemsState, key = {
+                                        it.id
+                                    }) { m ->
+                                        val tagIds = tagsMapState[m.id]?.map { it.tagId } ?: emptyList()
+                                        NoteListItem(
+                                            viewModel,
+                                            m,
+                                            tagsState.filter { tagIds.contains(it.id) },
+                                            onClick = {
+                                                if (viewModel.selectMode.value) {
+                                                    viewModel.select(m.id)
+                                                } else {
+                                                    navController.navigate(Routing.NoteDetail(m.id))
+                                                }
+                                            },
+                                            onLongClick = {
+                                                if (viewModel.selectMode.value) {
+                                                    return@NoteListItem
+                                                }
+                                                viewModel.selectedItem.value = m
+                                            },
+                                            onClickTag = { tag ->
+                                                if (viewModel.selectMode.value) {
+                                                    return@NoteListItem
+                                                }
+                                                val idx = viewModel.tabs.value.indexOfFirst { it.value == tag.id }
+                                                if (idx != -1) {
+                                                    scope.launch {
+                                                        pagerState.scrollToPage(idx)
+                                                    }
+                                                }
                                             }
-                                        },
-                                        onLongClick = {
-                                            if (viewModel.selectMode.value) {
-                                                return@NoteListItem
-                                            }
-                                            viewModel.selectedItem.value = m
-                                        },
-                                        onClickTag = { tag ->
-                                            if (viewModel.selectMode.value) {
-                                                return@NoteListItem
-                                            }
-                                            val idx = viewModel.tabs.value.indexOfFirst { it.value == tag.id }
-                                            if (idx != -1) {
-                                                scope.launch {
-                                                    pagerState.scrollToPage(idx)
+                                        )
+                                        VerticalSpace(dp = 8.dp)
+                                    }
+                                    item {
+                                        if (itemsState.isNotEmpty() && !viewModel.noMore.value) {
+                                            LaunchedEffect(Unit) {
+                                                scope.launch(Dispatchers.IO) {
+                                                    withIO { viewModel.moreAsync(tagsViewModel) }
                                                 }
                                             }
                                         }
-                                    )
-                                    VerticalSpace(dp = 8.dp)
-                                }
-                                item {
-                                    if (itemsState.isNotEmpty() && !viewModel.noMore.value) {
-                                        LaunchedEffect(Unit) {
-                                            scope.launch(Dispatchers.IO) {
-                                                withIO { viewModel.moreAsync(tagsViewModel) }
-                                            }
-                                        }
+                                        LoadMoreRefreshContent(viewModel.noMore.value)
                                     }
-                                    LoadMoreRefreshContent(viewModel.noMore.value)
-                                }
-                                item {
-                                    VerticalSpace(dp = paddingValues.calculateBottomPadding())
+                                    item {
+                                        VerticalSpace(dp = paddingValues.calculateBottomPadding())
+                                    }
                                 }
                             }
+                        } else {
+                            NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
                         }
-                    } else {
-                        NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
                     }
                 }
             }

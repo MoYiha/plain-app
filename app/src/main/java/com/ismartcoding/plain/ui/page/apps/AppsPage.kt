@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -62,7 +63,7 @@ import com.ismartcoding.plain.ui.extensions.reset
 import com.ismartcoding.plain.ui.models.AppsViewModel
 import com.ismartcoding.plain.ui.models.enterSearchMode
 import com.ismartcoding.plain.ui.models.exitSearchMode
-import com.ismartcoding.plain.ui.nav.RouteName
+import com.ismartcoding.plain.ui.nav.Routing
 import com.ismartcoding.plain.ui.theme.PlainTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -126,18 +127,18 @@ fun AppsPage(
         RadioDialog(
             title = stringResource(R.string.sort),
             options =
-            FileSortBy.entries.map {
-                RadioDialogOption(
-                    text = stringResource(id = it.getTextId()),
-                    selected = it == viewModel.sortBy.value,
-                ) {
-                    scope.launch(Dispatchers.IO) {
-                        PackageSortByPreference.putAsync(context, it)
-                        viewModel.sortBy.value = it
-                        viewModel.loadAsync()
+                FileSortBy.entries.map {
+                    RadioDialogOption(
+                        text = stringResource(id = it.getTextId()),
+                        selected = it == viewModel.sortBy.value,
+                    ) {
+                        scope.launch(Dispatchers.IO) {
+                            PackageSortByPreference.putAsync(context, it)
+                            viewModel.sortBy.value = it
+                            viewModel.loadAsync()
+                        }
                     }
-                }
-            },
+                },
         ) {
             viewModel.showSortDialog.value = false
         }
@@ -169,11 +170,12 @@ fun AppsPage(
                 )
                 return@PScaffold
             }
-            PTopAppBar(modifier = Modifier.combinedClickable(onClick = {}, onDoubleClick = {
-                scope.launch {
-                    scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
-                }
-            }), navController = navController,
+            PTopAppBar(
+                modifier = Modifier.combinedClickable(onClick = {}, onDoubleClick = {
+                    scope.launch {
+                        scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
+                    }
+                }), navController = navController,
                 title = stringResource(id = R.string.apps),
                 scrollBehavior = scrollBehavior,
                 actions = {
@@ -184,84 +186,86 @@ fun AppsPage(
                         viewModel.showSortDialog.value = true
                     }
                 })
-        }) {
-        if (!viewModel.showLoading.value) {
-            PScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                viewModel.tabs.value.forEachIndexed { index, s ->
-                    PFilterChip(
-                        modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            scope.launch {
-                                pagerState.scrollToPage(index)
+        }) { paddingValues ->
+        Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+            if (!viewModel.showLoading.value) {
+                PScrollableTabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    viewModel.tabs.value.forEachIndexed { index, s ->
+                        PFilterChip(
+                            modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                scope.launch {
+                                    pagerState.scrollToPage(index)
+                                }
+                            },
+                            label = {
+                                Text(text = s.title + " (" + s.count + ")")
                             }
-                        },
-                        label = {
-                            Text(text = s.title + " (" + s.count + ")")
-                        }
-                    )
+                        )
+                    }
                 }
             }
-        }
-        if (pagerState.pageCount == 0) {
-            NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
-            return@PScaffold
-        }
-        HorizontalPager(state = pagerState) { index ->
-            PullToRefresh(
-                refreshLayoutState = topRefreshLayoutState,
-            ) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+            if (pagerState.pageCount == 0) {
+                NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
+                return@PScaffold
+            }
+            HorizontalPager(state = pagerState) { index ->
+                PullToRefresh(
+                    refreshLayoutState = topRefreshLayoutState,
                 ) {
-                    if (itemsState.isNotEmpty()) {
-                        val scrollState = rememberLazyListState()
-                        scrollStateMap[index] = scrollState
-                        LazyColumnScrollbar(
-                            state = scrollState,
-                        ) {
-                            LazyColumn(
-                                Modifier
-                                    .fillMaxSize()
-                                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        if (itemsState.isNotEmpty()) {
+                            val scrollState = rememberLazyListState()
+                            scrollStateMap[index] = scrollState
+                            LazyColumnScrollbar(
                                 state = scrollState,
                             ) {
-                                item {
-                                    TopSpace()
-                                }
-                                items(itemsState, key = {
-                                    it.id
-                                }) { m ->
-                                    PackageListItem(
-                                        item = m,
-                                        modifier = PlainTheme.getCardModifier(),
-                                        onClick = {
-                                            navController.navigate("${RouteName.APPS.name}/${m.id}")
-                                        }
-                                    )
-                                    VerticalSpace(dp = 8.dp)
-                                }
-                                item {
-                                    if (itemsState.isNotEmpty() && !viewModel.noMore.value) {
-                                        LaunchedEffect(Unit) {
-                                            scope.launch(Dispatchers.IO) {
-                                                withIO { viewModel.moreAsync() }
+                                LazyColumn(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                                    state = scrollState,
+                                ) {
+                                    item {
+                                        TopSpace()
+                                    }
+                                    items(itemsState, key = {
+                                        it.id
+                                    }) { m ->
+                                        PackageListItem(
+                                            item = m,
+                                            modifier = PlainTheme.getCardModifier(),
+                                            onClick = {
+                                                navController.navigate(Routing.AppDetails(m.id))
+                                            }
+                                        )
+                                        VerticalSpace(dp = 8.dp)
+                                    }
+                                    item {
+                                        if (itemsState.isNotEmpty() && !viewModel.noMore.value) {
+                                            LaunchedEffect(Unit) {
+                                                scope.launch(Dispatchers.IO) {
+                                                    withIO { viewModel.moreAsync() }
+                                                }
                                             }
                                         }
+                                        LoadMoreRefreshContent(viewModel.noMore.value)
+                                        BottomSpace()
                                     }
-                                    LoadMoreRefreshContent(viewModel.noMore.value)
-                                    BottomSpace()
                                 }
                             }
+                        } else {
+                            NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
                         }
-                    } else {
-                        NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
                     }
                 }
             }

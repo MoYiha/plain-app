@@ -2,11 +2,6 @@ package com.ismartcoding.plain.ui.page.notes
 
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.RestoreFromTrash
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -19,8 +14,11 @@ import com.ismartcoding.plain.extensions.formatDateTime
 import com.ismartcoding.plain.features.locale.LocaleHelper
 import com.ismartcoding.plain.ui.base.ActionButtons
 import com.ismartcoding.plain.ui.base.BottomSpace
+import com.ismartcoding.plain.ui.base.IconTextTrashButton
+import com.ismartcoding.plain.ui.base.IconTextDeleteButton
+import com.ismartcoding.plain.ui.base.IconTextRestoreButton
+import com.ismartcoding.plain.ui.base.IconTextSelectButton
 import com.ismartcoding.plain.ui.base.PCard
-import com.ismartcoding.plain.ui.base.PIconTextActionButton
 import com.ismartcoding.plain.ui.base.PListItem
 import com.ismartcoding.plain.ui.base.PModalBottomSheet
 import com.ismartcoding.plain.ui.base.Subtitle
@@ -54,50 +52,31 @@ fun ViewNoteBottomSheet(
     ) {
         LazyColumn {
             item {
+                VerticalSpace(32.dp)
+            }
+            item {
                 ActionButtons {
                     if (!viewModel.showSearchBar.value) {
-                        PIconTextActionButton(
-                            icon = Icons.Outlined.Checklist,
-                            text = LocaleHelper.getString(R.string.select),
-                            click = {
-                                viewModel.enterSelectMode()
-                                viewModel.select(m.id)
-                                onDismiss()
-                            }
-                        )
+                        IconTextSelectButton {
+                            viewModel.enterSelectMode()
+                            viewModel.select(m.id)
+                            onDismiss()
+                        }
                     }
                     if (viewModel.trash.value) {
-                        PIconTextActionButton(
-                            icon = Icons.Outlined.RestoreFromTrash,
-                            text = LocaleHelper.getString(R.string.restore),
-                            click = {
-                                viewModel.restore(tagsViewModel, setOf(m.id))
-                                onDismiss()
-                            }
-                        )
-                        PIconTextActionButton(
-                            icon = Icons.Outlined.DeleteForever,
-                            text = LocaleHelper.getString(R.string.delete),
-                            click = {
-                                viewModel.delete(tagsViewModel, setOf(m.id))
-                                onDismiss()
-                            }
-                        )
+                        IconTextRestoreButton {
+                            viewModel.restore(tagsViewModel, setOf(m.id))
+                            onDismiss()
+                        }
+                        IconTextDeleteButton {
+                            viewModel.delete(tagsViewModel, setOf(m.id))
+                            onDismiss()
+                        }
                     } else {
-//            PIconTextActionButton(
-//                icon = painterResource(R.drawable.ic_keep),
-//                text = stringResource(id = R.string.pin),
-//                click = {
-//                }
-//            ),
-                        PIconTextActionButton(
-                            icon = Icons.Outlined.DeleteOutline,
-                            text = LocaleHelper.getString(R.string.move_to_trash),
-                            click = {
-                                viewModel.trash(tagsViewModel, setOf(m.id))
-                                onDismiss()
-                            }
-                        )
+                        IconTextTrashButton {
+                            viewModel.trash(tagsViewModel, setOf(m.id))
+                            onDismiss()
+                        }
                     }
                 }
             }
@@ -119,7 +98,7 @@ fun ViewNoteBottomSheet(
                 }
             }
             item {
-                VerticalSpace(dp = 24.dp)
+                VerticalSpace(dp = 16.dp)
                 PCard {
                     PListItem(title = stringResource(id = R.string.created_at), value = m.createdAt.formatDateTime())
                     PListItem(title = stringResource(id = R.string.updated_at), value = m.updatedAt.formatDateTime())

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -45,6 +46,7 @@ import com.ismartcoding.plain.ui.base.pullrefresh.PullToRefresh
 import com.ismartcoding.plain.ui.base.pullrefresh.RefreshContentState
 import com.ismartcoding.plain.ui.base.pullrefresh.rememberRefreshLayoutState
 import com.ismartcoding.plain.ui.models.SessionsViewModel
+import com.ismartcoding.plain.ui.theme.red
 import com.ismartcoding.plain.web.HttpServerManager
 import kotlinx.coroutines.launch
 
@@ -74,15 +76,17 @@ fun SessionsPage(
                 title = stringResource(id = R.string.sessions),
             )
         },
-        content = {
-            TopSpace()
-            PullToRefresh(refreshLayoutState = refreshState) {
+        content = { paddingValues ->
+            PullToRefresh(modifier = Modifier.padding(top = paddingValues.calculateTopPadding()), refreshLayoutState = refreshState) {
                 if (itemsState.isNotEmpty()) {
                     LazyColumn(
                         Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(),
                     ) {
+                        item {
+                            TopSpace()
+                        }
                         items(itemsState) { m ->
                             Subtitle(
                                 text = stringResource(R.string.last_visit_at) + " " + m.updatedAt.formatDateTime(),
@@ -93,7 +97,7 @@ fun SessionsPage(
                                 endContent = { state ->
                                     SwipeActionButton(
                                         text = stringResource(R.string.delete),
-                                        color = colorResource(id = R.color.red),
+                                        color = MaterialTheme.colorScheme.red,
                                         onClick = {
                                             scope.launch {
                                                 state.animateTo(DragAnchors.Center)
@@ -113,14 +117,14 @@ fun SessionsPage(
                                         title = stringResource(id = R.string.status),
                                         value = stringResource(
                                             id =
-                                            if (HttpServerManager.wsSessions.any {
-                                                    it.clientId == m.clientId
-                                                }
-                                            ) {
-                                                R.string.online
-                                            } else {
-                                                R.string.offline
-                                            },
+                                                if (HttpServerManager.wsSessions.any {
+                                                        it.clientId == m.clientId
+                                                    }
+                                                ) {
+                                                    R.string.online
+                                                } else {
+                                                    R.string.offline
+                                                },
                                         ),
                                     )
                                 }

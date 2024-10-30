@@ -4,9 +4,11 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,6 +37,7 @@ import com.ismartcoding.plain.ui.base.pullrefresh.PullToRefresh
 import com.ismartcoding.plain.ui.base.pullrefresh.RefreshContentState
 import com.ismartcoding.plain.ui.base.pullrefresh.rememberRefreshLayoutState
 import com.ismartcoding.plain.ui.models.ScanHistoryViewModel
+import com.ismartcoding.plain.ui.theme.red
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -60,14 +63,16 @@ fun ScanHistoryPage(
         topBar = {
             PTopAppBar(navController = navController, title = stringResource(R.string.scan_history))
         },
-        content = {
-            TopSpace()
-            PullToRefresh(refreshLayoutState = refreshState) {
+        content = { paddingValues ->
+            PullToRefresh(modifier = Modifier.padding(top = paddingValues.calculateTopPadding()), refreshLayoutState = refreshState) {
                 if (itemsState.isNotEmpty()) {
                     LazyColumn(
                         Modifier
                             .fillMaxSize()
                     ) {
+                        item {
+                            TopSpace()
+                        }
                         items(itemsState) { m ->
                             PSwipeBox(
                                 modifier = Modifier
@@ -75,7 +80,7 @@ fun ScanHistoryPage(
                                 endContent = { state ->
                                     SwipeActionButton(
                                         text = stringResource(R.string.delete),
-                                        color = colorResource(id = R.color.red),
+                                        color = MaterialTheme.colorScheme.red,
                                         onClick = {
                                             scope.launch {
                                                 state.animateTo(DragAnchors.Center)

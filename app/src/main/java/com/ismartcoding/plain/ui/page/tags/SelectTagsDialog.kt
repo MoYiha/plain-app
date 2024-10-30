@@ -46,6 +46,7 @@ fun SelectTagsDialog(
     }
 
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = {
             onDismiss()
         },

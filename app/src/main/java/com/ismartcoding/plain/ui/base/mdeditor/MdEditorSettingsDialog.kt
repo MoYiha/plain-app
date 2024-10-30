@@ -29,6 +29,7 @@ fun MdEditorSettingsDialog(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = {
             viewModel.showSettings = false
         },

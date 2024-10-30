@@ -4,10 +4,6 @@ import android.content.ClipData
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -23,9 +19,9 @@ import com.ismartcoding.plain.extensions.formatDateTime
 import com.ismartcoding.plain.features.locale.LocaleHelper
 import com.ismartcoding.plain.ui.base.ActionButtons
 import com.ismartcoding.plain.ui.base.BottomSpace
+import com.ismartcoding.plain.ui.base.IconTextDeleteButton
 import com.ismartcoding.plain.ui.base.PCard
 import com.ismartcoding.plain.ui.base.PIconButton
-import com.ismartcoding.plain.ui.base.PIconTextActionButton
 import com.ismartcoding.plain.ui.base.PListItem
 import com.ismartcoding.plain.ui.base.PModalBottomSheet
 import com.ismartcoding.plain.ui.base.Subtitle
@@ -39,6 +35,7 @@ import com.ismartcoding.plain.ui.models.enterSelectMode
 import com.ismartcoding.plain.ui.models.select
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.ismartcoding.plain.ui.base.IconTextSelectButton
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -62,26 +59,21 @@ fun ViewFeedEntryBottomSheet(
     ) {
         LazyColumn {
             item {
+                VerticalSpace(32.dp)
+            }
+            item {
                 ActionButtons {
                     if (!viewModel.showSearchBar.value) {
-                        PIconTextActionButton(
-                            icon = Icons.Outlined.Checklist,
-                            text = LocaleHelper.getString(R.string.select),
-                            click = {
-                                viewModel.enterSelectMode()
-                                viewModel.select(m.id)
-                                onDismiss()
-                            }
-                        )
-                    }
-                    PIconTextActionButton(
-                        icon = Icons.Outlined.DeleteForever,
-                        text = LocaleHelper.getString(R.string.delete),
-                        click = {
-                            viewModel.delete(tagsViewModel, setOf(m.id))
+                        IconTextSelectButton {
+                            viewModel.enterSelectMode()
+                            viewModel.select(m.id)
                             onDismiss()
                         }
-                    )
+                    }
+                    IconTextDeleteButton {
+                        viewModel.delete(tagsViewModel, setOf(m.id))
+                        onDismiss()
+                    }
                 }
                 VerticalSpace(dp = 16.dp)
                 Subtitle(text = stringResource(id = R.string.tags))
@@ -96,12 +88,12 @@ fun ViewFeedEntryBottomSheet(
                         }
                     }
                 )
-                VerticalSpace(dp = 24.dp)
+                VerticalSpace(dp = 16.dp)
                 PCard {
                     PListItem(modifier = Modifier.clickable {
                         WebHelper.open(context, m.url)
                     }, title = m.url, separatedActions = true, action = {
-                        PIconButton(icon = Icons.Outlined.ContentCopy, contentDescription = stringResource(id = R.string.copy_link), onClick = {
+                        PIconButton(icon = R.drawable.copy, contentDescription = stringResource(id = R.string.copy_link), click = {
                             val clip = ClipData.newPlainText(LocaleHelper.getString(R.string.link), m.url)
                             clipboardManager.setPrimaryClip(clip)
                             DialogHelper.showTextCopiedMessage(m.url)

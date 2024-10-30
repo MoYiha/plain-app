@@ -10,9 +10,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.LooksOne
-import androidx.compose.material.icons.outlined.LooksTwo
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -99,7 +96,7 @@ fun MdEditorBottomAppBar(
                         icon = button.icon,
                         contentDescription = "",
                         tint = MaterialTheme.colorScheme.primary,
-                        onClick = {
+                        click = {
                             button.click(viewModel)
                         },
                     )
@@ -113,10 +110,10 @@ fun MdEditorBottomAppBar(
             contentAlignment = Alignment.CenterEnd
         ) {
             PIconButton(
-                icon = if (viewModel.level == 0) Icons.Outlined.LooksOne else Icons.Outlined.LooksTwo,
+                icon = if (viewModel.level == 0) R.drawable.looks_one else R.drawable.looks_two,
                 contentDescription = "",
                 tint = MaterialTheme.colorScheme.onPrimary,
-                onClick = {
+                click = {
                     viewModel.toggleLevel(context)
                 },
             )

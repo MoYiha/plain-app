@@ -9,10 +9,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -23,12 +23,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +43,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.ismartcoding.lib.channel.receiveEventHandler
+import com.ismartcoding.lib.channel.Channel
 import com.ismartcoding.lib.helpers.CoroutinesHelper.withIO
 import com.ismartcoding.plain.R
 import com.ismartcoding.plain.enums.AppFeatureType
@@ -86,7 +84,6 @@ import com.ismartcoding.plain.ui.models.showBottomActions
 import com.ismartcoding.plain.ui.models.toggleSelectAll
 import com.ismartcoding.plain.ui.models.toggleSelectMode
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -115,7 +112,7 @@ fun DocsPage(
     var hasPermission by remember {
         mutableStateOf(AppFeatureType.FILES.hasPermission(context))
     }
-    val events by remember { mutableStateOf<MutableList<Job>>(arrayListOf()) }
+    val sharedFlow = Channel.sharedFlow
 
     val topRefreshLayoutState =
         rememberRefreshLayoutState {
@@ -150,31 +147,25 @@ fun DocsPage(
                 }
             }
         }
-        events.add(
-            receiveEventHandler<PermissionsResultEvent> {
-                hasPermission = AppFeatureType.FILES.hasPermission(context)
-                scope.launch(Dispatchers.IO) {
-                    viewModel.sortBy.value = DocSortByPreference.getValueAsync(context)
-                    viewModel.loadAsync(context)
-                }
-            })
     }
 
-    val insetsController = WindowCompat.getInsetsController(window, view)
-    LaunchedEffect(viewModel.selectMode.value) {
-        if (viewModel.selectMode.value) {
-            scrollBehavior.reset()
-            insetsController.hide(WindowInsetsCompat.Type.navigationBars())
-        } else {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
+    LaunchedEffect(sharedFlow) {
+        sharedFlow.collect { event ->
+            when (event) {
+                is PermissionsResultEvent -> {
+                    hasPermission = AppFeatureType.FILES.hasPermission(context)
+                    scope.launch(Dispatchers.IO) {
+                        viewModel.sortBy.value = DocSortByPreference.getValueAsync(context)
+                        viewModel.loadAsync(context)
+                    }
+                }
+            }
         }
     }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
-            events.forEach { it.cancel() }
-            events.clear()
+    LaunchedEffect(viewModel.selectMode.value) {
+        if (viewModel.selectMode.value) {
+            scrollBehavior.reset()
         }
     }
 
@@ -282,85 +273,87 @@ fun DocsPage(
                 visible = viewModel.showBottomActions(),
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }) {
-                FilesSelectModeBottomActions(viewModel)
+                DocFilesSelectModeBottomActions(viewModel)
             }
         },
     ) { paddingValues ->
-        if (!hasPermission) {
-            NeedPermissionColumn(AppFeatureType.FILES.getPermission()!!)
-            return@PScaffold
-        }
-        if (!viewModel.selectMode.value) {
-            PScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                viewModel.tabs.value.forEachIndexed { index, s ->
-                    PFilterChip(
-                        modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            scope.launch {
-                                pagerState.scrollToPage(index)
+        Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+            if (!hasPermission) {
+                NeedPermissionColumn(R.drawable.file_text, AppFeatureType.FILES.getPermission()!!)
+                return@PScaffold
+            }
+            if (!viewModel.selectMode.value) {
+                PScrollableTabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    viewModel.tabs.value.forEachIndexed { index, s ->
+                        PFilterChip(
+                            modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                scope.launch {
+                                    pagerState.scrollToPage(index)
+                                }
+                            },
+                            label = {
+                                Text(text = s.title + " (" + s.count + ")")
                             }
-                        },
-                        label = {
-                            Text(text = s.title + " (" + s.count + ")")
-                        }
-                    )
+                        )
+                    }
                 }
             }
-        }
-        if (pagerState.pageCount == 0) {
-            NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
-            return@PScaffold
-        }
-        HorizontalPager(state = pagerState) { index ->
-            PullToRefresh(
-                refreshLayoutState = topRefreshLayoutState,
-            ) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+            if (pagerState.pageCount == 0) {
+                NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
+                return@PScaffold
+            }
+            HorizontalPager(state = pagerState) { index ->
+                PullToRefresh(
+                    refreshLayoutState = topRefreshLayoutState,
                 ) {
-                    if (filteredItemsState.isNotEmpty()) {
-                        val scrollState = rememberLazyListState()
-                        scrollStateMap[index] = scrollState
-                        LazyColumnScrollbar(
-                            state = scrollState,
-                        ) {
-                            LazyColumn(
-                                Modifier
-                                    .fillMaxSize()
-                                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        if (filteredItemsState.isNotEmpty()) {
+                            val scrollState = rememberLazyListState()
+                            scrollStateMap[index] = scrollState
+                            LazyColumnScrollbar(
                                 state = scrollState,
                             ) {
-                                item {
-                                    TopSpace()
-                                }
-                                items(filteredItemsState) { m ->
-                                    DocItem(navController, viewModel, m)
-                                    VerticalSpace(dp = 8.dp)
-                                }
-                                item {
-                                    if (filteredItemsState.isNotEmpty() && !viewModel.noMore.value) {
-                                        LaunchedEffect(Unit) {
-                                            scope.launch(Dispatchers.IO) {
-                                                withIO { viewModel.moreAsync(context) }
+                                LazyColumn(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                                    state = scrollState,
+                                ) {
+                                    item {
+                                        TopSpace()
+                                    }
+                                    items(filteredItemsState) { m ->
+                                        DocItem(navController, viewModel, m)
+                                        VerticalSpace(dp = 8.dp)
+                                    }
+                                    item {
+                                        if (filteredItemsState.isNotEmpty() && !viewModel.noMore.value) {
+                                            LaunchedEffect(Unit) {
+                                                scope.launch(Dispatchers.IO) {
+                                                    withIO { viewModel.moreAsync(context) }
+                                                }
                                             }
                                         }
+                                        LoadMoreRefreshContent(viewModel.noMore.value)
                                     }
-                                    LoadMoreRefreshContent(viewModel.noMore.value)
-                                }
-                                item {
-                                    VerticalSpace(dp = paddingValues.calculateBottomPadding())
+                                    item {
+                                        VerticalSpace(dp = paddingValues.calculateBottomPadding())
+                                    }
                                 }
                             }
+                        } else {
+                            NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
                         }
-                    } else {
-                        NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
                     }
                 }
             }

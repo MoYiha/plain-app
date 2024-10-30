@@ -5,12 +5,10 @@ import android.app.Activity
 import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -18,12 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -42,20 +37,15 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.ismartcoding.lib.channel.receiveEventHandler
+import com.ismartcoding.lib.channel.Channel
 import com.ismartcoding.lib.channel.sendEvent
-import com.ismartcoding.plain.extensions.getDuration
 import com.ismartcoding.lib.extensions.getFilenameFromPath
 import com.ismartcoding.lib.extensions.getFilenameWithoutExtension
 import com.ismartcoding.lib.extensions.isAudioFast
-import com.ismartcoding.lib.extensions.isGestureInteractionMode
 import com.ismartcoding.lib.extensions.isImageFast
 import com.ismartcoding.lib.extensions.isVideoFast
-import com.ismartcoding.plain.extensions.newPath
 import com.ismartcoding.lib.extensions.queryOpenableFile
 import com.ismartcoding.lib.helpers.CoroutinesHelper.withIO
 import com.ismartcoding.lib.helpers.JsonHelper
@@ -69,6 +59,8 @@ import com.ismartcoding.plain.db.DMessageText
 import com.ismartcoding.plain.db.DMessageType
 import com.ismartcoding.plain.enums.PickFileTag
 import com.ismartcoding.plain.enums.PickFileType
+import com.ismartcoding.plain.extensions.getDuration
+import com.ismartcoding.plain.extensions.newPath
 import com.ismartcoding.plain.features.ChatHelper
 import com.ismartcoding.plain.features.DeleteChatItemViewEvent
 import com.ismartcoding.plain.features.PickFileResultEvent
@@ -77,6 +69,7 @@ import com.ismartcoding.plain.helpers.FileHelper
 import com.ismartcoding.plain.helpers.ImageHelper
 import com.ismartcoding.plain.helpers.VideoHelper
 import com.ismartcoding.plain.preference.ChatInputTextPreference
+import com.ismartcoding.plain.ui.base.AnimatedBottomAction
 import com.ismartcoding.plain.ui.base.HorizontalSpace
 import com.ismartcoding.plain.ui.base.NavigationBackIcon
 import com.ismartcoding.plain.ui.base.NavigationCloseIcon
@@ -84,6 +77,7 @@ import com.ismartcoding.plain.ui.base.PIconButton
 import com.ismartcoding.plain.ui.base.PMiniOutlineButton
 import com.ismartcoding.plain.ui.base.PScaffold
 import com.ismartcoding.plain.ui.base.PTopAppBar
+import com.ismartcoding.plain.ui.base.VerticalSpace
 import com.ismartcoding.plain.ui.base.fastscroll.LazyColumnScrollbar
 import com.ismartcoding.plain.ui.base.pullrefresh.PullToRefresh
 import com.ismartcoding.plain.ui.base.pullrefresh.RefreshContentState
@@ -92,8 +86,7 @@ import com.ismartcoding.plain.ui.components.ChatListItem
 import com.ismartcoding.plain.ui.components.chat.ChatInput
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.MediaPreviewer
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.rememberPreviewerState
-import com.ismartcoding.plain.ui.file.FilesDialog
-import com.ismartcoding.plain.ui.file.FilesType
+import com.ismartcoding.plain.ui.models.FilesType
 import com.ismartcoding.plain.ui.helpers.DialogHelper
 import com.ismartcoding.plain.ui.models.ChatViewModel
 import com.ismartcoding.plain.ui.models.exitSelectMode
@@ -105,7 +98,6 @@ import com.ismartcoding.plain.web.models.toModel
 import com.ismartcoding.plain.web.websocket.EventType
 import com.ismartcoding.plain.web.websocket.WebSocketEvent
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -141,7 +133,7 @@ fun ChatPage(
         }
     val scrollState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
-    val events by remember { mutableStateOf<MutableList<Job>>(arrayListOf()) }
+    val sharedFlow = Channel.sharedFlow
     val previewerState = rememberPreviewerState()
 
     val once = rememberSaveable { mutableStateOf(false) }
@@ -151,138 +143,122 @@ fun ChatPage(
             inputValue = ChatInputTextPreference.getAsync(context)
             viewModel.fetch(context)
         }
-        events.add(
-            receiveEventHandler<DeleteChatItemViewEvent> { event ->
-                viewModel.remove(event.id)
-            },
-        )
+    }
 
-        events.add(
-            receiveEventHandler<HttpServerEvents.MessageCreatedEvent> { event ->
-                viewModel.addAll(event.items)
-                scope.launch {
-                    scrollState.scrollToItem(0)
+    LaunchedEffect(sharedFlow) {
+        sharedFlow.collect { event ->
+            when (event) {
+                is DeleteChatItemViewEvent -> {
+                    viewModel.remove(event.id)
                 }
-            },
-        )
 
-        events.add(
-            receiveEventHandler<PickFileResultEvent> { event ->
-                if (event.tag != PickFileTag.SEND_MESSAGE) {
-                    return@receiveEventHandler
+                is HttpServerEvents.MessageCreatedEvent -> {
+                    viewModel.addAll(event.items)
+                    scope.launch {
+                        scrollState.scrollToItem(0)
+                    }
                 }
-                scope.launch {
-                    DialogHelper.showLoading()
-                    val items = mutableListOf<DMessageFile>()
-                    withIO {
-                        event.uris.forEach { uri ->
-                            try {
-                                val file = context.contentResolver.queryOpenableFile(uri)
-                                if (file != null) {
-                                    var fileName = file.displayName
-                                    if (event.type == PickFileType.IMAGE_VIDEO) {
-                                        val mimeType = context.contentResolver.getType(uri)
-                                        val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
-                                        if (extension.isNotEmpty()) {
-                                            fileName = fileName.getFilenameWithoutExtension() + "." + extension
-                                        }
-                                    }
-                                    val size = file.size
-                                    val dir =
-                                        when {
-                                            fileName.isVideoFast() -> {
-                                                Environment.DIRECTORY_MOVIES
-                                            }
 
-                                            fileName.isImageFast() -> {
-                                                Environment.DIRECTORY_PICTURES
-                                            }
-
-                                            fileName.isAudioFast() -> {
-                                                Environment.DIRECTORY_MUSIC
-                                            }
-
-                                            else -> {
-                                                Environment.DIRECTORY_DOCUMENTS
+                is PickFileResultEvent -> {
+                    if (event.tag != PickFileTag.SEND_MESSAGE) {
+                        return@collect
+                    }
+                    scope.launch {
+                        DialogHelper.showLoading()
+                        val items = mutableListOf<DMessageFile>()
+                        withIO {
+                            event.uris.forEach { uri ->
+                                try {
+                                    val file = context.contentResolver.queryOpenableFile(uri)
+                                    if (file != null) {
+                                        var fileName = file.displayName
+                                        if (event.type == PickFileType.IMAGE_VIDEO) {
+                                            val mimeType = context.contentResolver.getType(uri)
+                                            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: ""
+                                            if (extension.isNotEmpty()) {
+                                                fileName = fileName.getFilenameWithoutExtension() + "." + extension
                                             }
                                         }
-                                    var dst = context.getExternalFilesDir(dir)!!.path + "/$fileName"
-                                    var dstFile = File(dst)
-                                    if (dstFile.exists()) {
-                                        dst = dstFile.newPath()
-                                        dstFile = File(dst)
-                                        FileHelper.copyFile(context, uri, dst)
-                                    } else {
-                                        FileHelper.copyFile(context, uri, dst)
-                                    }
-                                    val intrinsicSize = if (dst.isImageFast()) ImageHelper.getIntrinsicSize(
-                                        dst,
-                                        ImageHelper.getRotation(dst)
-                                    ) else if (dst.isVideoFast()) VideoHelper.getIntrinsicSize(dst) else IntSize.Zero
-                                    items.add(
-                                        DMessageFile(
-                                            StringHelper.shortUUID(),
-                                            "app://$dir/${dst.getFilenameFromPath()}",
-                                            size,
-                                            dstFile.getDuration(context),
-                                            intrinsicSize.width,
-                                            intrinsicSize.height,
+                                        val size = file.size
+                                        val dir =
+                                            when {
+                                                fileName.isVideoFast() -> {
+                                                    Environment.DIRECTORY_MOVIES
+                                                }
+
+                                                fileName.isImageFast() -> {
+                                                    Environment.DIRECTORY_PICTURES
+                                                }
+
+                                                fileName.isAudioFast() -> {
+                                                    Environment.DIRECTORY_MUSIC
+                                                }
+
+                                                else -> {
+                                                    Environment.DIRECTORY_DOCUMENTS
+                                                }
+                                            }
+                                        var dst = context.getExternalFilesDir(dir)!!.path + "/$fileName"
+                                        var dstFile = File(dst)
+                                        if (dstFile.exists()) {
+                                            dst = dstFile.newPath()
+                                            dstFile = File(dst)
+                                            FileHelper.copyFile(context, uri, dst)
+                                        } else {
+                                            FileHelper.copyFile(context, uri, dst)
+                                        }
+                                        val intrinsicSize = if (dst.isImageFast()) ImageHelper.getIntrinsicSize(
+                                            dst,
+                                            ImageHelper.getRotation(dst)
+                                        ) else if (dst.isVideoFast()) VideoHelper.getIntrinsicSize(dst) else IntSize.Zero
+                                        items.add(
+                                            DMessageFile(
+                                                StringHelper.shortUUID(),
+                                                "app://$dir/${dst.getFilenameFromPath()}",
+                                                size,
+                                                dstFile.getDuration(context),
+                                                intrinsicSize.width,
+                                                intrinsicSize.height,
+                                            )
                                         )
-                                    )
+                                    }
+                                } catch (ex: Exception) {
+                                    // the picked file could be deleted
+                                    DialogHelper.showMessage(ex)
+                                    ex.printStackTrace()
                                 }
-                            } catch (ex: Exception) {
-                                // the picked file could be deleted
-                                DialogHelper.showMessage(ex)
-                                ex.printStackTrace()
                             }
                         }
-                    }
-                    val content =
-                        if (event.type == PickFileType.IMAGE_VIDEO) {
-                            DMessageContent(DMessageType.IMAGES.value, DMessageImages(items))
-                        } else {
-                            DMessageContent(
-                                DMessageType.FILES.value,
-                                DMessageFiles(items),
-                            )
-                        }
-                    val item = withIO { ChatHelper.sendAsync(content) }
-                    DialogHelper.hideLoading()
-                    viewModel.addAll(arrayListOf(item))
-                    sendEvent(
-                        WebSocketEvent(
-                            EventType.MESSAGE_CREATED,
-                            JsonHelper.jsonEncode(
-                                arrayListOf(
-                                    item.toModel().apply {
-                                        data = this.getContentData()
-                                    },
+                        val content =
+                            if (event.type == PickFileType.IMAGE_VIDEO) {
+                                DMessageContent(DMessageType.IMAGES.value, DMessageImages(items))
+                            } else {
+                                DMessageContent(
+                                    DMessageType.FILES.value,
+                                    DMessageFiles(items),
+                                )
+                            }
+                        val item = withIO { ChatHelper.sendAsync(content) }
+                        DialogHelper.hideLoading()
+                        viewModel.addAll(arrayListOf(item))
+                        sendEvent(
+                            WebSocketEvent(
+                                EventType.MESSAGE_CREATED,
+                                JsonHelper.jsonEncode(
+                                    arrayListOf(
+                                        item.toModel().apply {
+                                            data = this.getContentData()
+                                        },
+                                    ),
                                 ),
                             ),
-                        ),
-                    )
-                    scrollState.scrollToItem(0)
-                    delay(200)
-                    focusManager.clearFocus()
+                        )
+                        scrollState.scrollToItem(0)
+                        delay(200)
+                        focusManager.clearFocus()
+                    }
                 }
-            },
-        )
-    }
-
-    val insetsController = WindowCompat.getInsetsController(window, view)
-    LaunchedEffect(viewModel.selectMode.value, (previewerState.visible && !context.isGestureInteractionMode())) {
-        if (viewModel.selectMode.value || (previewerState.visible && !context.isGestureInteractionMode())) {
-            insetsController.hide(WindowInsetsCompat.Type.navigationBars())
-        } else {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            events.forEach { it.cancel() }
-            events.clear()
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
+            }
         }
     }
 
@@ -299,7 +275,7 @@ fun ChatPage(
     val pageTitle = if (viewModel.selectMode.value) {
         LocaleHelper.getStringF(R.string.x_selected, "count", viewModel.selectedIds.size)
     } else {
-        stringResource(id = R.string.file_transfer_assistant)
+        stringResource(id = R.string.send_to_pc)
     }
     PScaffold(
         modifier = Modifier
@@ -335,24 +311,58 @@ fun ChatPage(
                         HorizontalSpace(dp = 8.dp)
                     } else {
                         PIconButton(
-                            icon = Icons.Outlined.Folder,
+                            icon = R.drawable.folder,
                             contentDescription = stringResource(R.string.folder),
                             tint = MaterialTheme.colorScheme.onSurface,
-                            onClick = {
-                                FilesDialog(FilesType.APP).show()
+                            click = {
+//                                FilesDialog(FilesType.APP).show()
                             },
                         )
                     }
                 },
             )
         },
-
         bottomBar = {
-            AnimatedVisibility(
-                visible = viewModel.showBottomActions(),
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }) {
-                SelectModeBottomActions(viewModel)
+            AnimatedBottomAction(visible = viewModel.showBottomActions()) {
+                ChatSelectModeBottomActions(viewModel)
+            }
+        }) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = paddingValues.calculateTopPadding())
+        ) {
+            PullToRefresh(
+                modifier = Modifier.weight(1f),
+                refreshLayoutState = refreshState,
+            ) {
+                LazyColumnScrollbar(
+                    state = scrollState,
+                ) {
+                    LazyColumn(
+                        state = scrollState,
+                        reverseLayout = true,
+                        verticalArrangement = Arrangement.Top,
+                    ) {
+                        item(key = "bottomSpace") {
+                            VerticalSpace(dp = paddingValues.calculateBottomPadding())
+                        }
+                        itemsIndexed(itemsState.value, key = { _, a -> a.id }) { index, m ->
+                            ChatListItem(
+                                navController = navController,
+                                viewModel = viewModel,
+                                itemsState.value,
+                                m = m,
+                                index = index,
+                                imageWidthDp = imageWidthDp,
+                                imageWidthPx = imageWidthPx.value,
+                                focusManager = focusManager,
+                                previewerState = previewerState,
+                            )
+                        }
+
+                    }
+                }
             }
             if (!viewModel.showBottomActions()) {
                 ChatInput(
@@ -390,41 +400,7 @@ fun ChatPage(
                     },
                 )
             }
-        },
-        content = { paddingValues ->
-            PullToRefresh(
-                refreshLayoutState = refreshState,
-            ) {
-                LazyColumnScrollbar(
-                    state = scrollState,
-                ) {
-                    LazyColumn(
-                        modifier =
-                        Modifier
-                            .padding(bottom = paddingValues.calculateBottomPadding())
-                            .fillMaxSize(),
-                        state = scrollState,
-                        reverseLayout = true,
-                        verticalArrangement = Arrangement.Top,
-                    ) {
-                        itemsIndexed(itemsState.value, key = { _, a -> a.id }) { index, m ->
-                            ChatListItem(
-                                navController = navController,
-                                viewModel = viewModel,
-                                itemsState.value,
-                                m = m,
-                                index = index,
-                                imageWidthDp = imageWidthDp,
-                                imageWidthPx = imageWidthPx.value,
-                                focusManager = focusManager,
-                                previewerState = previewerState,
-                            )
-                        }
-                    }
-                }
-            }
-
-        },
-    )
+        }
+    }
     MediaPreviewer(state = previewerState)
 }

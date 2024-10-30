@@ -1,6 +1,5 @@
 package com.ismartcoding.plain.ui.components.chat
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -8,11 +7,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ismartcoding.plain.extensions.formatTime
 import com.ismartcoding.plain.ui.models.VChat
+import com.ismartcoding.plain.ui.theme.secondaryTextColor
 
 @Composable
 fun ChatName(m: VChat) {
@@ -28,7 +27,7 @@ fun ChatName(m: VChat) {
         )
         Text(
             text = m.createdAt.formatTime(),
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Normal, color = MaterialTheme.colorScheme.secondary),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Normal, color = MaterialTheme.colorScheme.secondaryTextColor),
         )
     }
 }

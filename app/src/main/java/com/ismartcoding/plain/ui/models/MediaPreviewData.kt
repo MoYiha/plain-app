@@ -13,6 +13,7 @@ import com.ismartcoding.plain.db.DMessageFiles
 import com.ismartcoding.plain.db.DMessageImages
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.TransformItemState
 import com.ismartcoding.plain.ui.preview.PreviewItem
+import com.ismartcoding.plain.ui.models.VChat
 
 object MediaPreviewData {
     var items = listOf<PreviewItem>()
@@ -65,6 +66,21 @@ object MediaPreviewData {
         MediaPreviewData.items.find { it.id == m.id }?.let {
             it.initAsync(m)
             itemState.intrinsicSize = it.intrinsicSize.toSize()
+        }
+    }
+    
+    fun setDataAsync(
+        context: Context,
+        itemState: TransformItemState,
+        previewItems: List<PreviewItem>,
+        selectedItem: PreviewItem
+    ) {
+        MediaPreviewData.items = previewItems
+        items.find { it.id == selectedItem.id }?.let {
+            if (it.path.isImageFast()) {
+                it.initImageAsync()
+            }
+            itemState.intrinsicSize = it.intrinsicSize?.toSize()
         }
     }
 }

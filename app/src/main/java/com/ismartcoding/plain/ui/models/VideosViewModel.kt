@@ -1,8 +1,10 @@
 package com.ismartcoding.plain.ui.models
 
 import android.content.Context
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.SavedStateHandle
@@ -26,42 +28,45 @@ import kotlinx.coroutines.launch
 
 @OptIn(SavedStateHandleSaveableApi::class)
 class VideosViewModel(private val savedStateHandle: SavedStateHandle) :
-    ISearchableViewModel<DVideo>,
+    IMediaSearchableViewModel<DVideo>,
     ViewModel() {
     private val _itemsFlow = MutableStateFlow(mutableStateListOf<DVideo>())
     val itemsFlow: StateFlow<List<DVideo>> get() = _itemsFlow
-    val showLoading = mutableStateOf(true)
+    override val showLoading = mutableStateOf(true)
     val offset = mutableIntStateOf(0)
     val limit = mutableIntStateOf(1000)
     val noMore = mutableStateOf(false)
-    var trash = mutableStateOf(false)
+    override var trash = mutableStateOf(false)
     var total = mutableIntStateOf(0)
     var totalTrash = mutableIntStateOf(0)
-    var tag = mutableStateOf<DTag?>(null)
-    val bucketId = mutableStateOf<String>("")
-    val dataType = DataType.VIDEO
+    override var tag = mutableStateOf<DTag?>(null)
+    override val bucketId = mutableStateOf<String>("")
+    override val dataType = DataType.VIDEO
     val selectedItem = mutableStateOf<DVideo?>(null)
     val sortBy = mutableStateOf(FileSortBy.DATE_DESC)
     val showRenameDialog = mutableStateOf(false)
-    val showSortDialog = mutableStateOf(false)
+    override val showSortDialog = mutableStateOf(false)
+    val showCellsPerRowDialog = mutableStateOf(false)
     var tabs = mutableStateOf(listOf<VTabData>())
+    val scrollStateMap = mutableStateMapOf<Int, LazyGridState>()
+    override var hasPermission = mutableStateOf(false)
 
     override val showSearchBar = mutableStateOf(false)
     override val searchActive = mutableStateOf(false)
     override val queryText = mutableStateOf("")
 
     suspend fun moreAsync(context: Context, tagsViewModel: TagsViewModel) {
-        offset.value += limit.value
-        val items = VideoMediaStoreHelper.searchAsync(context, getQuery(), limit.value, offset.value, sortBy.value)
+        offset.value += limit.intValue
+        val items = VideoMediaStoreHelper.searchAsync(context, getQuery(), limit.intValue, offset.intValue, sortBy.value)
         _itemsFlow.value.addAll(items)
         tagsViewModel.loadMoreAsync(items.map { it.id }.toSet())
         showLoading.value = false
-        noMore.value = items.size < limit.value
+        noMore.value = items.size < limit.intValue
     }
 
-    suspend fun loadAsync(context: Context, tagsViewModel: TagsViewModel) {
-        offset.value = 0
-        _itemsFlow.value = VideoMediaStoreHelper.searchAsync(context, getQuery(), limit.value, offset.value, sortBy.value).toMutableStateList()
+    override suspend fun loadAsync(context: Context, tagsViewModel: TagsViewModel) {
+        offset.intValue = 0
+        _itemsFlow.value = VideoMediaStoreHelper.searchAsync(context, getQuery(), limit.intValue, offset.intValue, sortBy.value).toMutableStateList()
         refreshTabsAsync(context, tagsViewModel)
         showLoading.value = false
     }
@@ -69,10 +74,10 @@ class VideosViewModel(private val savedStateHandle: SavedStateHandle) :
     // for updating tags, delete items
     suspend fun refreshTabsAsync(context: Context, tagsViewModel: TagsViewModel) {
         tagsViewModel.loadAsync(_itemsFlow.value.map { it.id }.toSet())
-        total.value = VideoMediaStoreHelper.countAsync(context, getTotalQuery())
-        noMore.value = _itemsFlow.value.size < limit.value
+        total.intValue = VideoMediaStoreHelper.countAsync(context, getTotalQuery())
+        noMore.value = _itemsFlow.value.size < limit.intValue
         tabs.value = listOf(
-            VTabData(LocaleHelper.getString(R.string.all), "all", total.value),
+            VTabData(LocaleHelper.getString(R.string.all), "all", total.intValue),
             * tagsViewModel.itemsFlow.value.map { VTabData(it.name, it.id, it.count) }.toTypedArray()
         )
     }

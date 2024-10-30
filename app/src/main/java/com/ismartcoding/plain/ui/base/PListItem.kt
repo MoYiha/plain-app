@@ -48,42 +48,59 @@ fun PListItem(
     val tonalPalettes = LocalTonalPalettes.current
     Surface(
         modifier =
-        modifier
-            .alpha(if (enable) 1f else 0.5f),
+            modifier
+                .alpha(if (enable) 1f else 0.5f),
         color = Color.Unspecified,
     ) {
         Row(
             modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp, 8.dp, 8.dp, 8.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp, 8.dp, 8.dp, 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                if (icon is ImageVector) {
-                    Icon(
-                        modifier = Modifier.padding(end = 16.dp),
-                        imageVector = icon,
-                        contentDescription = title,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else if (icon is Painter) {
-                    Image(
-                        modifier =
-                        Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                        painter = icon,
-                        contentDescription = title,
-                    )
-                } else if (icon is String) {
-                    AsyncImage(
-                        model = icon,
-                        contentDescription = title,
-                        modifier = Modifier
-                            .size(24.dp),
-                    )
-                    HorizontalSpace(dp = 16.dp)
+                when (icon) {
+                    is ImageVector -> {
+                        Icon(
+                            modifier = Modifier.padding(end = 16.dp),
+                            imageVector = icon,
+                            contentDescription = title,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    is Painter -> {
+                        Image(
+                            modifier =
+                                Modifier
+                                    .padding(end = 16.dp)
+                                    .size(24.dp),
+                            painter = icon,
+                            contentDescription = title,
+                        )
+                    }
+
+                    is Int -> {
+                        Image(
+                            modifier =
+                                Modifier
+                                    .padding(end = 16.dp)
+                                    .size(24.dp),
+                            painter = painterResource(icon),
+                            contentDescription = title,
+                        )
+                    }
+
+                    is String -> {
+                        AsyncImage(
+                            model = icon,
+                            contentDescription = title,
+                            modifier = Modifier
+                                .size(24.dp),
+                        )
+                        HorizontalSpace(dp = 16.dp)
+                    }
                 }
             }
             Column(
@@ -108,9 +125,9 @@ fun PListItem(
             if (separatedActions) {
                 VerticalDivider(
                     modifier =
-                    Modifier
-                        .height(32.dp)
-                        .padding(start = 16.dp),
+                        Modifier
+                            .height(32.dp)
+                            .padding(start = 16.dp),
                     color = tonalPalettes neutralVariant 80 onDark (tonalPalettes neutralVariant 30),
                 )
             }
@@ -137,10 +154,10 @@ fun PListItem(
 
             if (showMore) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_chevron_right),
+                    painter = painterResource(id = R.drawable.chevron_right),
                     modifier =
-                    Modifier
-                        .size(24.dp),
+                        Modifier
+                            .size(24.dp),
                     contentDescription = title,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )

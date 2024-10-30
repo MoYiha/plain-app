@@ -8,33 +8,24 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,40 +43,22 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.ismartcoding.lib.channel.receiveEventHandler
+import com.ismartcoding.lib.channel.Channel
 import com.ismartcoding.lib.extensions.isGestureInteractionMode
 import com.ismartcoding.lib.helpers.CoroutinesHelper.withIO
 import com.ismartcoding.plain.R
-import com.ismartcoding.plain.data.DMediaBucket
 import com.ismartcoding.plain.enums.AppFeatureType
 import com.ismartcoding.plain.features.PermissionsResultEvent
-import com.ismartcoding.plain.features.locale.LocaleHelper
-import com.ismartcoding.plain.features.media.CastPlayer
 import com.ismartcoding.plain.preference.VideoGridCellsPerRowPreference
 import com.ismartcoding.plain.preference.VideoSortByPreference
-import com.ismartcoding.plain.ui.base.ActionButtonMoreWithMenu
-import com.ismartcoding.plain.ui.base.ActionButtonSearch
-import com.ismartcoding.plain.ui.base.HorizontalSpace
-import com.ismartcoding.plain.ui.base.NavigationBackIcon
-import com.ismartcoding.plain.ui.base.NavigationCloseIcon
 import com.ismartcoding.plain.ui.base.NeedPermissionColumn
 import com.ismartcoding.plain.ui.base.NoDataColumn
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemCast
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemCellsPerRow
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemSelect
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemSort
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemTags
 import com.ismartcoding.plain.ui.base.PFilterChip
-import com.ismartcoding.plain.ui.base.PIconButton
-import com.ismartcoding.plain.ui.base.PMiniOutlineButton
 import com.ismartcoding.plain.ui.base.PScaffold
-import com.ismartcoding.plain.ui.base.PTopAppBar
 import com.ismartcoding.plain.ui.base.RadioDialog
 import com.ismartcoding.plain.ui.base.RadioDialogOption
 import com.ismartcoding.plain.ui.base.VerticalSpace
-import com.ismartcoding.plain.ui.base.dragselect.DragSelectState
 import com.ismartcoding.plain.ui.base.dragselect.gridDragSelect
-import com.ismartcoding.plain.ui.base.dragselect.rememberDragSelectState
 import com.ismartcoding.plain.ui.base.fastscroll.LazyVerticalGridScrollbar
 import com.ismartcoding.plain.ui.base.pullrefresh.LoadMoreRefreshContent
 import com.ismartcoding.plain.ui.base.pullrefresh.PullToRefresh
@@ -94,29 +67,26 @@ import com.ismartcoding.plain.ui.base.pullrefresh.rememberRefreshLayoutState
 import com.ismartcoding.plain.ui.base.tabs.PScrollableTabRow
 import com.ismartcoding.plain.ui.components.CastDialog
 import com.ismartcoding.plain.ui.components.FileSortDialog
-import com.ismartcoding.plain.ui.components.ListSearchBar
 import com.ismartcoding.plain.ui.components.VideoGridItem
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.MediaPreviewer
-import com.ismartcoding.plain.ui.components.mediaviewer.previewer.rememberPreviewerState
-import com.ismartcoding.plain.ui.nav.navigateMediaFolders
-import com.ismartcoding.plain.ui.nav.navigateTags
 import com.ismartcoding.plain.ui.extensions.reset
 import com.ismartcoding.plain.ui.models.CastViewModel
 import com.ismartcoding.plain.ui.models.MediaFoldersViewModel
 import com.ismartcoding.plain.ui.models.TagsViewModel
 import com.ismartcoding.plain.ui.models.VideosViewModel
-import com.ismartcoding.plain.ui.models.enterSearchMode
 import com.ismartcoding.plain.ui.models.exitSearchMode
+import com.ismartcoding.plain.ui.page.root.TopBarVideos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun VideosPage(
     navController: NavHostController,
     bucketId: String,
-    viewModel: VideosViewModel = viewModel(),
+    videosViewModel: VideosViewModel = viewModel(),
     tagsViewModel: TagsViewModel = viewModel(),
     bucketViewModel: MediaFoldersViewModel = viewModel(),
     castViewModel: CastViewModel = viewModel(),
@@ -124,48 +94,37 @@ fun VideosPage(
     val context = LocalContext.current
     val view = LocalView.current
     val window = (view.context as Activity).window
-    val itemsState by viewModel.itemsFlow.collectAsState()
+    val videosState = VideosPageState.create(
+        videosViewModel = videosViewModel,
+        tagsViewModel = tagsViewModel,
+        bucketViewModel = bucketViewModel,
+    )
+    val pagerState = videosState.pagerState
+    val scrollBehavior = videosState.scrollBehavior
+    val tagsState = videosState.tagsState
+    val previewerState = videosState.previewerState
+    val tagsMapState = videosState.tagsMapState
+    val dragSelectState = videosState.dragSelectState
+    val itemsState = videosState.itemsState
+    val cellsPerRow = videosState.cellsPerRow
+    val bucketsMap = videosState.bucketsMap
+
     val configuration = LocalConfiguration.current
-    val bucketsState by bucketViewModel.itemsFlow.collectAsState()
-    val bucketsMap = remember(bucketsState) {
-        derivedStateOf {
-            bucketsState.associateBy { it.id }
-        }
-    }
-
-    val previewerState = rememberPreviewerState()
-    val tagsState by tagsViewModel.itemsFlow.collectAsState()
-    val tagsMapState by tagsViewModel.tagsMapFlow.collectAsState()
     val scope = rememberCoroutineScope()
-    var hasPermission by remember {
-        mutableStateOf(AppFeatureType.FILES.hasPermission(context))
-    }
-
-    val scrollStateMap = remember {
-        mutableStateMapOf<Int, LazyGridState>()
-    }
-    val pagerState = rememberPagerState(pageCount = { viewModel.tabs.value.size })
-    val dragSelectState = rememberDragSelectState({ scrollStateMap[pagerState.currentPage] })
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(canScroll = {
-        (scrollStateMap[pagerState.currentPage]?.firstVisibleItemIndex ?: 0) > 0 && !dragSelectState.selectMode
-    })
     var isFirstTime by remember { mutableStateOf(true) }
 
-    var cellsPerRow by remember { mutableIntStateOf(VideoGridCellsPerRowPreference.default) }
     val density = LocalDensity.current
-    val imageWidthPx = remember(cellsPerRow) {
-        density.run { ((configuration.screenWidthDp.dp - ((cellsPerRow - 1) * 2).dp) / cellsPerRow).toPx().toInt() }
+    val imageWidthPx = remember(cellsPerRow.value) {
+        density.run { ((configuration.screenWidthDp.dp - ((cellsPerRow.value - 1) * 2).dp) / cellsPerRow.value).toPx().toInt() }
     }
 
-    var showCellsPerRowDialog by remember { mutableStateOf(false) }
-
-    val events by remember { mutableStateOf<MutableList<Job>>(arrayListOf()) }
+    val sharedFlow = Channel.sharedFlow
 
     val topRefreshLayoutState =
         rememberRefreshLayoutState {
             scope.launch {
                 withIO {
-                    viewModel.loadAsync(context, tagsViewModel)
+                    videosViewModel.loadAsync(context, tagsViewModel)
                     bucketViewModel.loadAsync(context)
                 }
                 setRefreshState(RefreshContentState.Finished)
@@ -176,56 +135,41 @@ fun VideosPage(
     LaunchedEffect(Unit) {
         if (!once.value) {
             once.value = true
-            viewModel.bucketId.value = bucketId
-            bucketViewModel.dataType.value = viewModel.dataType
-            tagsViewModel.dataType.value = viewModel.dataType
-            if (hasPermission) {
+            videosViewModel.hasPermission.value = AppFeatureType.FILES.hasPermission(context)
+            videosViewModel.bucketId.value = bucketId
+            if (videosViewModel.hasPermission.value) {
                 scope.launch(Dispatchers.IO) {
-                    cellsPerRow = VideoGridCellsPerRowPreference.getAsync(context)
-                    viewModel.sortBy.value = VideoSortByPreference.getValueAsync(context)
-                    viewModel.loadAsync(context, tagsViewModel)
+                    cellsPerRow.value = VideoGridCellsPerRowPreference.getAsync(context)
+                    videosViewModel.sortBy.value = VideoSortByPreference.getValueAsync(context)
+                    videosViewModel.loadAsync(context, tagsViewModel)
                     bucketViewModel.loadAsync(context)
                 }
             }
         } else {
             // refresh tabs in case tag name changed in tags page
             scope.launch(Dispatchers.IO) {
-                viewModel.refreshTabsAsync(context, tagsViewModel)
+                videosViewModel.refreshTabsAsync(context, tagsViewModel)
             }
         }
-        events.add(
-            receiveEventHandler<PermissionsResultEvent> {
-                hasPermission = AppFeatureType.FILES.hasPermission(context)
-                scope.launch(Dispatchers.IO) {
-                    viewModel.sortBy.value = VideoSortByPreference.getValueAsync(context)
-                    viewModel.loadAsync(context, tagsViewModel)
-                }
-            })
     }
 
-    val insetsController = WindowCompat.getInsetsController(window, view)
+    LaunchedEffect(sharedFlow) {
+        sharedFlow.collect { event ->
+            when (event) {
+                is PermissionsResultEvent -> {
+                    videosViewModel.hasPermission.value = AppFeatureType.FILES.hasPermission(context)
+                    scope.launch(Dispatchers.IO) {
+                        videosViewModel.sortBy.value = VideoSortByPreference.getValueAsync(context)
+                        videosViewModel.loadAsync(context, tagsViewModel)
+                    }
+                }
+            }
+        }
+    }
+
     LaunchedEffect(dragSelectState.selectMode, (previewerState.visible && !context.isGestureInteractionMode())) {
         if (dragSelectState.selectMode || (previewerState.visible && !context.isGestureInteractionMode())) {
             scrollBehavior.reset()
-            insetsController.hide(WindowInsetsCompat.Type.navigationBars())
-        } else {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
-        }
-    }
-
-    val onSearch: (String) -> Unit = {
-        viewModel.searchActive.value = false
-        viewModel.showLoading.value = true
-        scope.launch(Dispatchers.IO) {
-            viewModel.loadAsync(context, tagsViewModel)
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            insetsController.show(WindowInsetsCompat.Type.navigationBars())
-            events.forEach { it.cancel() }
-            events.clear()
         }
     }
 
@@ -234,21 +178,21 @@ fun VideosPage(
             isFirstTime = false
             return@LaunchedEffect
         }
-        val tab = viewModel.tabs.value.getOrNull(pagerState.currentPage) ?: return@LaunchedEffect
+        val tab = videosViewModel.tabs.value.getOrNull(pagerState.currentPage) ?: return@LaunchedEffect
         if (tab.value == "all") {
-            viewModel.trash.value = false
-            viewModel.tag.value = null
+            videosViewModel.trash.value = false
+            videosViewModel.tag.value = null
         } else {
             val tag = tagsState.find { it.id == tab.value }
-            viewModel.trash.value = false
-            viewModel.tag.value = tag
+            videosViewModel.trash.value = false
+            videosViewModel.tag.value = tag
         }
         scope.launch {
             scrollBehavior.reset()
-            scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
+            videosViewModel.scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
         }
         scope.launch(Dispatchers.IO) {
-            viewModel.loadAsync(context, tagsViewModel)
+            videosViewModel.loadAsync(context, tagsViewModel)
         }
     }
 
@@ -261,46 +205,49 @@ fun VideosPage(
             dragSelectState.exitSelectMode()
         } else if (castViewModel.castMode.value) {
             castViewModel.exitCastMode()
-        } else if (viewModel.showSearchBar.value) {
-            if (!viewModel.searchActive.value || viewModel.queryText.value.isEmpty()) {
-                viewModel.exitSearchMode()
-                onSearch("")
+        } else if (videosViewModel.showSearchBar.value) {
+            if (!videosViewModel.searchActive.value || videosViewModel.queryText.value.isEmpty()) {
+                videosViewModel.exitSearchMode()
+                videosViewModel.showLoading.value = true
+                scope.launch(Dispatchers.IO) {
+                    videosViewModel.loadAsync(context, tagsViewModel)
+                }
             }
         } else {
             navController.popBackStack()
         }
     }
 
-    if (showCellsPerRowDialog) {
+    if (videosViewModel.showCellsPerRowDialog.value) {
         RadioDialog(
             title = stringResource(R.string.cells_per_row),
             options = IntRange(2, 10).map { value ->
                 RadioDialogOption(
                     text = value.toString(),
-                    selected = value == cellsPerRow,
+                    selected = value == cellsPerRow.value,
                 ) {
                     scope.launch(Dispatchers.IO) {
                         VideoGridCellsPerRowPreference.putAsync(context, value)
-                        cellsPerRow = value
+                        cellsPerRow.value = value
                     }
                 }
             },
         ) {
-            showCellsPerRowDialog = false
+            videosViewModel.showCellsPerRowDialog.value = false
         }
     }
 
-    ViewVideoBottomSheet(viewModel, tagsViewModel, tagsMapState, tagsState, dragSelectState)
+    ViewVideoBottomSheet(videosViewModel, tagsViewModel, tagsMapState, tagsState, dragSelectState)
 
-    if (viewModel.showSortDialog.value) {
-        FileSortDialog(viewModel.sortBy, onSelected = {
+    if (videosViewModel.showSortDialog.value) {
+        FileSortDialog(videosViewModel.sortBy, onSelected = {
             scope.launch(Dispatchers.IO) {
                 VideoSortByPreference.putAsync(context, it)
-                viewModel.sortBy.value = it
-                viewModel.loadAsync(context, tagsViewModel)
+                videosViewModel.sortBy.value = it
+                videosViewModel.loadAsync(context, tagsViewModel)
             }
         }, onDismiss = {
-            viewModel.showSortDialog.value = false
+            videosViewModel.showSortDialog.value = false
         })
     }
 
@@ -308,89 +255,13 @@ fun VideosPage(
 
     PScaffold(
         topBar = {
-            if (viewModel.showSearchBar.value) {
-                ListSearchBar(
-                    viewModel = viewModel,
-                    onSearch = onSearch
-                )
-                return@PScaffold
-            }
-            PTopAppBar(
-                modifier = Modifier.combinedClickable(onClick = {}, onDoubleClick = {
-                    scope.launch {
-                        scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
-                    }
-                }),
+            TopBarVideos(
                 navController = navController,
-                navigationIcon = {
-                    if (dragSelectState.selectMode) {
-                        NavigationCloseIcon {
-                            dragSelectState.exitSelectMode()
-                        }
-                    } else if (castViewModel.castMode.value) {
-                        NavigationCloseIcon {
-                            castViewModel.exitCastMode()
-                        }
-                    } else {
-                        NavigationBackIcon {
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                title = getPageTitle(viewModel, castViewModel, bucketsMap.value[bucketId], dragSelectState),
-                scrollBehavior = scrollBehavior,
-                actions = {
-                    if (!hasPermission) {
-                        return@PTopAppBar
-                    }
-                    if (castViewModel.castMode.value) {
-                        return@PTopAppBar
-                    }
-                    if (dragSelectState.selectMode) {
-                        PMiniOutlineButton(
-                            text = stringResource(if (dragSelectState.isAllSelected(itemsState)) R.string.unselect_all else R.string.select_all),
-                            onClick = {
-                                dragSelectState.toggleSelectAll(itemsState)
-                            },
-                        )
-                        HorizontalSpace(dp = 8.dp)
-                    } else {
-                        ActionButtonSearch {
-                            viewModel.enterSearchMode()
-                        }
-                        if (viewModel.bucketId.value.isEmpty()) {
-                            PIconButton(
-                                icon = Icons.Outlined.Folder,
-                                contentDescription = stringResource(R.string.folders),
-                                tint = MaterialTheme.colorScheme.onSurface,
-                            ) {
-                                navController.navigateMediaFolders(viewModel.dataType)
-                            }
-                        }
-                        ActionButtonMoreWithMenu { dismiss ->
-                            PDropdownMenuItemSelect(onClick = {
-                                dismiss()
-                                dragSelectState.enterSelectMode()
-                            })
-                            PDropdownMenuItemTags(onClick = {
-                                dismiss()
-                                navController.navigateTags(viewModel.dataType)
-                            })
-                            PDropdownMenuItemSort(onClick = {
-                                dismiss()
-                                viewModel.showSortDialog.value = true
-                            })
-                            PDropdownMenuItemCast(onClick = {
-                                dismiss()
-                                castViewModel.showCastDialog.value = true
-                            })
-                            PDropdownMenuItemCellsPerRow(onClick = {
-                                dismiss()
-                                showCellsPerRowDialog = true
-                            })
-                        }
-                    }
-                },
+                videosState = videosState,
+                videosViewModel = videosViewModel,
+                tagsViewModel = tagsViewModel,
+                castViewModel = castViewModel,
+                bucketId = bucketId,
             )
         },
         bottomBar = {
@@ -398,122 +269,124 @@ fun VideosPage(
                 visible = dragSelectState.showBottomActions(),
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }) {
-                FilesSelectModeBottomActions(viewModel, tagsViewModel, tagsState, dragSelectState)
+                VideoFilesSelectModeBottomActions(videosViewModel, tagsViewModel, tagsState, dragSelectState)
             }
         },
     ) { paddingValues ->
-        if (!hasPermission) {
-            NeedPermissionColumn(AppFeatureType.FILES.getPermission()!!)
-            return@PScaffold
-        }
+        Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
 
-        if (!dragSelectState.selectMode) {
-            PScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                viewModel.tabs.value.forEachIndexed { index, s ->
-                    PFilterChip(
-                        modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            scope.launch {
-                                pagerState.scrollToPage(index)
+            if (!videosViewModel.hasPermission.value) {
+                NeedPermissionColumn(R.drawable.video, AppFeatureType.FILES.getPermission()!!)
+                return@PScaffold
+            }
+
+            if (!dragSelectState.selectMode) {
+                PScrollableTabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    videosViewModel.tabs.value.forEachIndexed { index, s ->
+                        PFilterChip(
+                            modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                scope.launch {
+                                    pagerState.scrollToPage(index)
+                                }
+                            },
+                            label = {
+                                if (index == 0) {
+                                    Text(text = s.title + " (" + s.count + ")")
+                                } else {
+                                    Text(if (videosViewModel.bucketId.value.isNotEmpty() || videosViewModel.queryText.value.isNotEmpty()) s.title else "${s.title} (${s.count})")
+                                }
                             }
-                        },
-                        label = {
-                            if (index == 0) {
-                                Text(text = s.title + " (" + s.count + ")")
-                            } else {
-                                Text(if (viewModel.bucketId.value.isNotEmpty() || viewModel.queryText.value.isNotEmpty()) s.title else "${s.title} (${s.count})")
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
-        }
 
-        if (pagerState.pageCount == 0) {
-            NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
-            return@PScaffold
-        }
+            if (pagerState.pageCount == 0) {
+                NoDataColumn(loading = videosViewModel.showLoading.value, search = videosViewModel.showSearchBar.value)
+                return@PScaffold
+            }
 
-        HorizontalPager(state = pagerState) { index ->
-
-            PullToRefresh(
-                refreshLayoutState = topRefreshLayoutState,
-            ) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+            HorizontalPager(state = pagerState) { index ->
+                PullToRefresh(
+                    refreshLayoutState = topRefreshLayoutState,
                 ) {
-                    if (itemsState.isNotEmpty()) {
-                        val scrollState = rememberLazyGridState()
-                        scrollStateMap[index] = scrollState
-                        LazyVerticalGridScrollbar(
-                            state = scrollState,
-                        ) {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(cellsPerRow),
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        if (itemsState.isNotEmpty()) {
+                            val scrollState = rememberLazyGridState()
+                            videosViewModel.scrollStateMap[index] = scrollState
+                            LazyVerticalGridScrollbar(
                                 state = scrollState,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .nestedScroll(scrollBehavior.nestedScrollConnection)
-                                    .gridDragSelect(
-                                        items = itemsState,
-                                        state = dragSelectState,
-                                    ),
-                                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
                             ) {
-                                items(itemsState,
-                                    key = {
-                                        it.id
-                                    },
-                                    contentType = {
-                                        "video"
-                                    },
-                                    span = {
-                                        GridItemSpan(1)
-                                    }) { m ->
-                                    VideoGridItem(
-                                        modifier = Modifier
-                                            .animateItemPlacement(),
-                                        viewModel,
-                                        castViewModel,
-                                        m,
-                                        showSize = cellsPerRow < 6,
-                                        previewerState,
-                                        dragSelectState,
-                                        imageWidthPx,
-                                        sort = viewModel.sortBy.value,
-                                    )
-                                }
-                                item(
-                                    span = { GridItemSpan(maxLineSpan) },
-                                    key = "loadMore"
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(cellsPerRow.value),
+                                    state = scrollState,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .nestedScroll(scrollBehavior.nestedScrollConnection)
+                                        .gridDragSelect(
+                                            items = itemsState,
+                                            state = dragSelectState,
+                                        ),
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
                                 ) {
-                                    if (itemsState.isNotEmpty() && !viewModel.noMore.value) {
-                                        LaunchedEffect(Unit) {
-                                            scope.launch(Dispatchers.IO) {
-                                                withIO { viewModel.moreAsync(context, tagsViewModel) }
+                                    items(
+                                        itemsState,
+                                        key = {
+                                            it.id
+                                        },
+                                        contentType = {
+                                            "video"
+                                        },
+                                        span = {
+                                            GridItemSpan(1)
+                                        }) { m ->
+                                        VideoGridItem(
+                                            modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
+                                            videosViewModel,
+                                            castViewModel,
+                                            m,
+                                            showSize = cellsPerRow.value < 6,
+                                            previewerState,
+                                            dragSelectState,
+                                            imageWidthPx,
+                                            sort = videosViewModel.sortBy.value,
+                                        )
+                                    }
+                                    item(
+                                        span = { GridItemSpan(maxLineSpan) },
+                                        key = "loadMore"
+                                    ) {
+                                        if (itemsState.isNotEmpty() && !videosViewModel.noMore.value) {
+                                            LaunchedEffect(Unit) {
+                                                scope.launch(Dispatchers.IO) {
+                                                    withIO { videosViewModel.moreAsync(context, tagsViewModel) }
+                                                }
                                             }
                                         }
+                                        LoadMoreRefreshContent(videosViewModel.noMore.value)
                                     }
-                                    LoadMoreRefreshContent(viewModel.noMore.value)
-                                }
-                                item(
-                                    span = { GridItemSpan(maxLineSpan) },
-                                    key = "bottomSpace"
-                                ) {
-                                    VerticalSpace(dp = paddingValues.calculateBottomPadding())
+                                    item(
+                                        span = { GridItemSpan(maxLineSpan) },
+                                        key = "bottomSpace"
+                                    ) {
+                                        VerticalSpace(dp = paddingValues.calculateBottomPadding())
+                                    }
                                 }
                             }
+                        } else {
+                            NoDataColumn(loading = videosViewModel.showLoading.value, search = videosViewModel.showSearchBar.value)
                         }
-                    } else {
-                        NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
                     }
                 }
             }
@@ -526,35 +399,19 @@ fun VideosPage(
         tagsState = tagsState,
         onRenamed = {
             scope.launch(Dispatchers.IO) {
-                viewModel.loadAsync(context, tagsViewModel)
+                videosViewModel.loadAsync(context, tagsViewModel)
             }
         },
         deleteAction = { item ->
             scope.launch(Dispatchers.IO) {
-                viewModel.delete(context, tagsViewModel, setOf(item.mediaId))
+                videosViewModel.delete(context, tagsViewModel, setOf(item.mediaId))
                 previewerState.closeTransform()
             }
         },
         onTagsChanged = {
             scope.launch(Dispatchers.IO) {
-                viewModel.loadAsync(context, tagsViewModel)
+                videosViewModel.loadAsync(context, tagsViewModel)
             }
         },
     )
-}
-
-@Composable
-fun getPageTitle(viewModel: VideosViewModel, castViewModel: CastViewModel, bucket: DMediaBucket?, dragSelectState: DragSelectState): String {
-    val videoName = bucket?.name ?: stringResource(id = R.string.videos)
-    return if (castViewModel.castMode.value) {
-        stringResource(id = R.string.cast_mode) + " - " + CastPlayer.currentDevice?.description?.device?.friendlyName
-    } else if (dragSelectState.selectMode) {
-        LocaleHelper.getStringF(R.string.x_selected, "count", dragSelectState.selectedIds.size)
-    } else if (viewModel.tag.value != null) {
-        videoName + " - " + viewModel.tag.value!!.name
-    } else if (viewModel.trash.value) {
-        stringResource(id = R.string.videos) + " - " + stringResource(id = R.string.trash)
-    } else {
-        videoName
-    }
 }

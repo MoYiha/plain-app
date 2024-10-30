@@ -3,8 +3,6 @@ package com.ismartcoding.plain.ui.page.feeds
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -15,6 +13,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,17 +26,19 @@ fun EditFeedDialog(viewModel: FeedsViewModel) {
     if (viewModel.showEditDialog.value) {
         val focusManager = LocalFocusManager.current
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = {
                 viewModel.showEditDialog.value = false
             },
             icon = {
                 Icon(
-                    imageVector = Icons.Outlined.Edit,
+                    painter = painterResource(R.drawable.square_pen),
                     contentDescription = stringResource(id = R.string.edit),
                 )
             },
             title = {
-                Text(text = stringResource(id = R.string.edit), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                Text(
+                    text = stringResource(id = R.string.edit), maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleLarge
                 )
             },
