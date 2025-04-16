@@ -1,8 +1,13 @@
 package com.ismartcoding.plain.ui.models
 
 import android.content.Context
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -25,23 +30,27 @@ import kotlinx.coroutines.launch
 
 @OptIn(SavedStateHandleSaveableApi::class)
 class ImagesViewModel(private val savedStateHandle: SavedStateHandle) :
-    ISearchableViewModel<DImage>,
+    IMediaSearchableViewModel<DImage>,
     ViewModel() {
     private val _itemsFlow = MutableStateFlow(mutableStateListOf<DImage>())
     val itemsFlow: StateFlow<List<DImage>> get() = _itemsFlow
-    val showLoading = mutableStateOf(true)
+    override val showLoading = mutableStateOf(true)
     private var offset = 0
     private val limit = 1000
     val noMore = mutableStateOf(false)
-    var trash = mutableStateOf(false)
-    var tag = mutableStateOf<DTag?>(null)
-    val bucketId = mutableStateOf<String>("")
-    val dataType = DataType.IMAGE
+    override var trash = mutableStateOf(false)
+    override var tag = mutableStateOf<DTag?>(null)
+    override val bucketId = mutableStateOf<String>("")
+    override val dataType = DataType.IMAGE
     val selectedItem = mutableStateOf<DImage?>(null)
     val sortBy = mutableStateOf(FileSortBy.DATE_DESC)
     val showRenameDialog = mutableStateOf(false)
-    val showSortDialog = mutableStateOf(false)
+    override val showSortDialog = mutableStateOf(false)
     var tabs = mutableStateOf(listOf<VTabData>())
+    override var hasPermission = mutableStateOf(false)
+
+    val scrollStateMap = mutableStateMapOf<Int, LazyGridState>()
+    var showCellsPerRowDialog = mutableStateOf(false)
 
     override val showSearchBar = mutableStateOf(false)
     override val searchActive = mutableStateOf(false)
@@ -56,7 +65,7 @@ class ImagesViewModel(private val savedStateHandle: SavedStateHandle) :
         noMore.value = items.size < limit
     }
 
-    suspend fun loadAsync(context: Context, tagsViewModel: TagsViewModel) {
+    override suspend fun loadAsync(context: Context, tagsViewModel: TagsViewModel) {
         offset = 0
         _itemsFlow.value = ImageMediaStoreHelper.searchAsync(context, getQuery(), limit, offset, sortBy.value).toMutableStateList()
         refreshTabsAsync(context, tagsViewModel)

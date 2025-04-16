@@ -20,7 +20,6 @@ import com.ismartcoding.plain.enums.PasswordType
 import com.ismartcoding.plain.features.Permission
 import com.ismartcoding.plain.data.DPlaylistAudio
 import com.ismartcoding.plain.enums.MediaPlayMode
-import com.ismartcoding.plain.features.device.DeviceSortBy
 import com.ismartcoding.plain.features.file.FileSortBy
 import com.ismartcoding.plain.data.DVideo
 import com.ismartcoding.plain.data.DScreenMirrorQuality
@@ -287,26 +286,6 @@ object AgreeTermsPreference : BasePreference<Boolean>() {
     override val key = booleanPreferencesKey("agree_terms")
 }
 
-object ExchangeRatePreference : BasePreference<String>() {
-    override val default = ""
-    override val key = stringPreferencesKey("exchange")
-
-    fun getConfig(preferences: Preferences): ExchangeConfig {
-        val str = get(preferences)
-        if (str.isEmpty()) {
-            return ExchangeConfig()
-        }
-        return jsonDecode(str)
-    }
-
-    suspend fun putAsync(
-        context: Context,
-        value: ExchangeConfig,
-    ) {
-        putAsync(context, jsonEncode(value))
-    }
-}
-
 object ScreenMirrorQualityPreference : BasePreference<String>() {
     override val default = ""
     override val key = stringPreferencesKey("screen_mirror_quality")
@@ -360,23 +339,6 @@ object KeyStorePasswordPreference : BasePreference<String>() {
 
     suspend fun resetAsync(context: Context) {
         putAsync(context, StringHelper.shortUUID())
-    }
-}
-
-object DeviceSortByPreference : BasePreference<Int>() {
-    override val default = DeviceSortBy.LAST_ACTIVE.ordinal
-    override val key = intPreferencesKey("device_sort_by")
-
-    suspend fun putAsync(
-        context: Context,
-        value: DeviceSortBy,
-    ) {
-        putAsync(context, value.ordinal)
-    }
-
-    suspend fun getValueAsync(context: Context): DeviceSortBy {
-        val value = getAsync(context)
-        return DeviceSortBy.entries.find { it.ordinal == value } ?: DeviceSortBy.LAST_ACTIVE
     }
 }
 

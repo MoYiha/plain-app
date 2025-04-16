@@ -66,11 +66,11 @@ import com.ismartcoding.plain.ui.page.images.ImagesPage
 import com.ismartcoding.plain.ui.page.images.MediaFoldersPage
 import com.ismartcoding.plain.ui.page.notes.NotePage
 import com.ismartcoding.plain.ui.page.notes.NotesPage
+import com.ismartcoding.plain.ui.page.root.RootPage
 import com.ismartcoding.plain.ui.page.scan.ScanHistoryPage
 import com.ismartcoding.plain.ui.page.scan.ScanPage
 import com.ismartcoding.plain.ui.page.settings.AboutPage
 import com.ismartcoding.plain.ui.page.settings.BackupRestorePage
-import com.ismartcoding.plain.ui.page.settings.ColorAndStylePage
 import com.ismartcoding.plain.ui.page.settings.DarkThemePage
 import com.ismartcoding.plain.ui.page.settings.LanguagePage
 import com.ismartcoding.plain.ui.page.settings.SettingsPage
@@ -128,11 +128,10 @@ fun Main(navControllerState: MutableState<NavHostController?>, onLaunched: () ->
         NavHost(
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
             navController = navController,
-            startDestination = Routing.Home,
+            startDestination = Routing.Root,
         ) {
-            composable<Routing.Home> { HomePage(navController, mainViewModel) }
+            composable<Routing.Root> { RootPage(navController, mainViewModel) }
             composable<Routing.Settings> { SettingsPage(navController) }
-            composable<Routing.ColorAndStyle> { ColorAndStylePage(navController) }
             composable<Routing.DarkTheme> { DarkThemePage(navController) }
             composable<Routing.Language> { LanguagePage(navController) }
             composable<Routing.BackupRestore> { BackupRestorePage(navController) }
@@ -150,7 +149,10 @@ fun Main(navControllerState: MutableState<NavHostController?>, onLaunched: () ->
             composable<Routing.Feeds> { FeedsPage(navController) }
             composable<Routing.FeedSettings> { FeedSettingsPage(navController) }
             composable<Routing.WebLearnMore> { WebLearnMorePage(navController) }
-            composable<Routing.Audio> { AudioPage(navController) }
+            composable<Routing.Audio> { backStackEntry ->
+                val r = backStackEntry.toRoute<Routing.Audio>()
+                AudioPage(navController, r.bucketId)
+            }
             composable<Routing.Notes> { backStackEntry ->
                 val tagsViewModel = backStackEntry.sharedViewModel<TagsViewModel>(navController)
                 val notesViewModel = backStackEntry.sharedViewModel<NotesViewModel>(navController)
@@ -248,36 +250,38 @@ fun Main(navControllerState: MutableState<NavHostController?>, onLaunched: () ->
         }
 
         if (confirmDialogEvent != null) {
-            AlertDialog(onDismissRequest = {
-                confirmDialogEvent = null
-            }, title = if (confirmDialogEvent!!.title.isNotEmpty()) {
-                {
-                    Text(
-                        confirmDialogEvent!!.title,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
-            } else null, text = {
-                Text(confirmDialogEvent!!.message)
-            }, confirmButton = {
-                Button(onClick = {
-                    confirmDialogEvent!!.confirmButton.second()
+            AlertDialog(
+                containerColor = MaterialTheme.colorScheme.surface,
+                onDismissRequest = {
                     confirmDialogEvent = null
-                }) {
-                    Text(
-                        confirmDialogEvent!!.confirmButton.first,
-                    )
-                }
-            }, dismissButton = {
-                confirmDialogEvent?.dismissButton?.let {
-                    TextButton(onClick = {
-                        it.second()
+                }, title = if (confirmDialogEvent!!.title.isNotEmpty()) {
+                    {
+                        Text(
+                            confirmDialogEvent!!.title,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                } else null, text = {
+                    Text(confirmDialogEvent!!.message)
+                }, confirmButton = {
+                    Button(onClick = {
+                        confirmDialogEvent!!.confirmButton.second()
                         confirmDialogEvent = null
                     }) {
-                        Text(it.first)
+                        Text(
+                            confirmDialogEvent!!.confirmButton.first,
+                        )
                     }
-                }
-            })
+                }, dismissButton = {
+                    confirmDialogEvent?.dismissButton?.let {
+                        TextButton(onClick = {
+                            it.second()
+                            confirmDialogEvent = null
+                        }) {
+                            Text(it.first)
+                        }
+                    }
+                })
         }
 
         if (loadingDialogEvent != null) {

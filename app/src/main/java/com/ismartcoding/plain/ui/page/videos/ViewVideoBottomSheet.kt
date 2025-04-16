@@ -85,6 +85,9 @@ fun ViewVideoBottomSheet(
     ) {
         LazyColumn {
             item {
+                VerticalSpace(32.dp)
+            }
+            item {
                 ActionButtons {
                     if (!viewModel.showSearchBar.value) {
                         PIconTextActionButton(

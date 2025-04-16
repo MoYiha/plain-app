@@ -38,6 +38,7 @@ fun BatchSelectTagsDialog(
     val tagIds = remember { mutableStateListOf<String>() }
 
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = {
             onDismiss()
         },

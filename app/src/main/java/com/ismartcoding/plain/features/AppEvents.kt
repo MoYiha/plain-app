@@ -4,23 +4,13 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.PowerManager
-import com.aallam.openai.api.BetaOpenAI
-import com.aallam.openai.api.chat.ChatCompletionRequest
-import com.aallam.openai.api.chat.ChatMessage
-import com.aallam.openai.api.chat.ChatRole
-import com.aallam.openai.api.http.Timeout
-import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.OpenAI
-import com.aallam.openai.client.OpenAIConfig
 import com.ismartcoding.lib.channel.receiveEventHandler
 import com.ismartcoding.lib.channel.sendEvent
 import com.ismartcoding.lib.helpers.CoroutinesHelper.coIO
-import com.ismartcoding.lib.helpers.JsonHelper.jsonEncode
 import com.ismartcoding.lib.helpers.SslHelper
 import com.ismartcoding.lib.logcat.LogCat
 import com.ismartcoding.plain.BuildConfig
 import com.ismartcoding.plain.MainApp
-import com.ismartcoding.plain.db.DAIChat
 import com.ismartcoding.plain.enums.ActionSourceType
 import com.ismartcoding.plain.enums.ActionType
 import com.ismartcoding.plain.enums.AudioAction
@@ -30,17 +20,13 @@ import com.ismartcoding.plain.enums.PickFileTag
 import com.ismartcoding.plain.enums.PickFileType
 import com.ismartcoding.plain.features.feed.FeedWorkerStatus
 import com.ismartcoding.plain.powerManager
-import com.ismartcoding.plain.preference.ChatGPTApiKeyPreference
 import com.ismartcoding.plain.services.HttpServerService
 import com.ismartcoding.plain.web.AuthRequest
-import com.ismartcoding.plain.web.websocket.EventType
 import com.ismartcoding.plain.web.websocket.WebSocketEvent
 import com.ismartcoding.plain.web.websocket.WebSocketHelper
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.json.JSONObject
-import kotlin.time.Duration.Companion.seconds
 
 class BoxConnectivityStateChangedEvent
 
@@ -113,14 +99,11 @@ data class PlayAudioEvent(val uri: Uri)
 
 data class PlayAudioResultEvent(val uri: Uri)
 
-class AIChatCreatedEvent(val item: DAIChat)
-
 object AppEvents {
     private lateinit var mediaPlayer: MediaPlayer
     private var mediaPlayingUri: Uri? = null
     val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "${BuildConfig.APPLICATION_ID}:http_server")
 
-    @OptIn(BetaOpenAI::class)
     fun register() {
         mediaPlayer = MediaPlayer()
         receiveEventHandler<PlayAudioEvent> { event ->
@@ -197,54 +180,6 @@ object AppEvents {
                         delay(500)
                         retry--
                     }
-                }
-            }
-        }
-
-        receiveEventHandler<AIChatCreatedEvent> { event ->
-            coIO {
-                val parentId = event.item.parentId.ifEmpty { event.item.id }
-                try {
-                    val openAI =
-                        OpenAI(
-                            OpenAIConfig(
-                                token = ChatGPTApiKeyPreference.getAsync(MainApp.instance),
-                                timeout = Timeout(socket = 60.seconds),
-                            ),
-                        )
-
-                    val messages = mutableListOf<ChatMessage>()
-                    messages.addAll(
-                        AIChatHelper.getChatsAsync(parentId).map {
-                            ChatMessage(
-                                role = if (it.isMe) ChatRole.User else ChatRole.Assistant,
-                                content = it.content,
-                            )
-                        },
-                    )
-
-                    val chatCompletionRequest =
-                        ChatCompletionRequest(
-                            model = ModelId("gpt-3.5-turbo"),
-                            messages = messages,
-                        )
-                    openAI.chatCompletions(chatCompletionRequest).collect { completion ->
-                        val data = JSONObject()
-                        data.put("parentId", parentId)
-                        val c = completion.choices.getOrNull(0)
-                        data.put("content", c?.delta?.content ?: "")
-                        data.put("finishReason", c?.finishReason ?: "")
-                        LogCat.d(jsonEncode(completion))
-                        sendEvent(WebSocketEvent(EventType.AI_CHAT_REPLIED, data.toString()))
-                    }
-                } catch (ex: Exception) {
-                    ex.printStackTrace()
-                    LogCat.e(ex.toString())
-                    val data = JSONObject()
-                    data.put("parentId", parentId)
-                    data.put("content", ex.toString())
-                    data.put("finishReason", "stop")
-                    sendEvent(WebSocketEvent(EventType.AI_CHAT_REPLIED, data.toString()))
                 }
             }
         }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -28,7 +27,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -283,12 +281,12 @@ fun DocsPage(
                 visible = viewModel.showBottomActions(),
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }) {
-                FilesSelectModeBottomActions(viewModel)
+                DocFilesSelectModeBottomActions(viewModel)
             }
         },
     ) { paddingValues ->
         if (!hasPermission) {
-            NeedPermissionColumn(AppFeatureType.FILES.getPermission()!!)
+            NeedPermissionColumn(R.drawable.file_text, AppFeatureType.FILES.getPermission()!!)
             return@PScaffold
         }
         if (!viewModel.selectMode.value) {

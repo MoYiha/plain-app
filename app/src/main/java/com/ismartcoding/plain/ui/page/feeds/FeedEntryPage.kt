@@ -360,7 +360,7 @@ fun FeedEntryPage(
                     }
 
                     item {
-                        BottomSpace(paddingValues)
+                        BottomSpace()
                     }
                 }
             }

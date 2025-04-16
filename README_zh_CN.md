@@ -75,23 +75,6 @@ QQ群: 812409393
 
 简朴需要安卓9.0或更高版本。
 
-##  计划
-
--   ❌ 未开始
--   🟡 开发中
--   ✅ 已完成
-
-| 功能                              | WEB | APP |
-|---------------------------------|:---:|:---:|
-| Material you主题                  | 🟡  | 🟡  |
-| 通过网页链接分享文件                      |  ❌  |  ❌  |
-| 装有 PlainApp 的手机之间互发消息(蓝牙、Wi-Fi) |  ❌  |  ❌  |
-| 翻译字典                            |  ❌  |  ❌  |
-| 书籍                              |  ❌  |  ❌  |
-| 待办事项                            |  ❌  |  ❌  |
-
-最终目标是将智能手机变成个人数据和知识管理器，每个人都能够轻松地通过PlainApp互相共享知识和数据。
-
 ## 常见问题解答
 
 [http://docs.plain.icu/zh/faq.html](http://docs.plain.icu/zh/faq.html)
@@ -101,15 +84,6 @@ QQ群: 812409393
 
 这是一个开源应用程序。如果你有疑虑，你可以选择构建自己的版本，或者选择不使用它。
 如果您遇到任何问题，请随时在 GitHub 上提交一个问题。我乐意提供帮助。请不要随意给一星评价。
-
-## 从PlainBox下载GraphQL模版
-
-```bash
-./gradlew downloadApolloSchema \
-  --endpoint="http://<box-ip>:8080/graphql" \
-  --schema="app/src/main/graphql/com/ismartcoding/plain/schema.graphqls" \
-  --header="Authorization: Bearer <token>"
-```
 
 ## 构建
 

@@ -117,10 +117,10 @@ fun WebAddressBar(
                 text = AnnotatedString(defaultUrl.value),
                 modifier = Modifier.padding(start = 16.dp),
                 style =
-                TextStyle(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 18.sp,
-                ),
+                    TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 18.sp,
+                    ),
                 onClick = {
                     val clip = ClipData.newPlainText(LocaleHelper.getString(R.string.link), defaultUrl.value)
                     clipboardManager.setPrimaryClip(clip)
@@ -152,8 +152,8 @@ fun WebAddressBar(
         if (ip4s.isNotEmpty()) {
             Box(
                 modifier =
-                Modifier
-                    .wrapContentSize(Alignment.TopEnd),
+                    Modifier
+                        .wrapContentSize(Alignment.TopEnd),
             ) {
                 PIconButton(
                     icon = Icons.Rounded.MoreVert,
@@ -188,55 +188,59 @@ fun WebAddressBar(
         RadioDialog(
             title = stringResource(R.string.change_port),
             options =
-            (if (isHttps) HttpServerManager.httpsPorts else HttpServerManager.httpPorts).map {
-                RadioDialogOption(
-                    text = it.toString(),
-                    selected = it == port,
-                ) {
-                    scope.launch(Dispatchers.IO) {
-                        if (isHttps) {
-                            HttpsPortPreference.putAsync(context, it)
-                        } else {
-                            HttpPortPreference.putAsync(context, it)
+                (if (isHttps) HttpServerManager.httpsPorts else HttpServerManager.httpPorts).map {
+                    RadioDialogOption(
+                        text = it.toString(),
+                        selected = it == port,
+                    ) {
+                        scope.launch(Dispatchers.IO) {
+                            if (isHttps) {
+                                HttpsPortPreference.putAsync(context, it)
+                            } else {
+                                HttpPortPreference.putAsync(context, it)
+                            }
                         }
+                        MaterialAlertDialogBuilder(context)
+                            .setTitle(R.string.restart_app_title)
+                            .setMessage(R.string.restart_app_message)
+                            .setPositiveButton(R.string.relaunch_app) { _, _ ->
+                                AppHelper.relaunch(context)
+                            }
+                            .setCancelable(false)
+                            .create()
+                            .show()
                     }
-                    MaterialAlertDialogBuilder(context)
-                        .setTitle(R.string.restart_app_title)
-                        .setMessage(R.string.restart_app_message)
-                        .setPositiveButton(R.string.relaunch_app) { _, _ ->
-                            AppHelper.relaunch(context)
-                        }
-                        .setCancelable(false)
-                        .create()
-                        .show()
-                }
-            },
+                },
         ) {
             portDialogVisible = false
         }
     }
 
     if (qrCodeDialogVisible) {
-        AlertDialog(onDismissRequest = {
-            qrCodeDialogVisible = false
-        }, confirmButton = {
-            Button(
-                onClick = {
-                    qrCodeDialogVisible = false
+        AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
+            onDismissRequest = {
+                qrCodeDialogVisible = false
+            }, confirmButton = {
+                Button(
+                    onClick = {
+                        qrCodeDialogVisible = false
+                    }
+                ) {
+                    Text(stringResource(id = R.string.close))
                 }
-            ) {
-                Text(stringResource(id = R.string.close))
-            }
-        }, title = {
+            }, title = {
 
-        }, text = {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Image(
-                    bitmap = QrCodeGenerateHelper.generate(defaultUrl.value, 240, 240).asImageBitmap(),
-                    contentDescription = stringResource(id = R.string.qrcode),
-                    modifier = Modifier.size(240.dp).clip(RoundedCornerShape(16.dp))
-                )
-            }
-        })
+            }, text = {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Image(
+                        bitmap = QrCodeGenerateHelper.generate(defaultUrl.value, 240, 240).asImageBitmap(),
+                        contentDescription = stringResource(id = R.string.qrcode),
+                        modifier = Modifier
+                            .size(240.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                }
+            })
     }
 }

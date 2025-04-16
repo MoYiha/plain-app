@@ -180,9 +180,9 @@ fun SoundMeterPage(navController: NavHostController) {
                 item {
                     Column(
                         modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = 56.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 56.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
@@ -204,9 +204,9 @@ fun SoundMeterPage(navController: NavHostController) {
                 item {
                     Row(
                         modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 40.dp, vertical = 24.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 40.dp, vertical = 24.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(
@@ -235,10 +235,10 @@ fun SoundMeterPage(navController: NavHostController) {
                         text = decibelValueString,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(96.dp)
-                            .padding(16.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .height(96.dp)
+                                .padding(16.dp),
                         textAlign = TextAlign.Center,
                     )
                     if (isRunning) {
@@ -272,17 +272,19 @@ fun SoundMeterPage(navController: NavHostController) {
     )
 
     if (decibelValuesDialogVisible) {
-        AlertDialog(onDismissRequest = {
-            decibelValuesDialogVisible = false
-        }, confirmButton = {
-            Button(
-                onClick = {
-                    decibelValuesDialogVisible = false
+        AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
+            onDismissRequest = {
+                decibelValuesDialogVisible = false
+            }, confirmButton = {
+                Button(
+                    onClick = {
+                        decibelValuesDialogVisible = false
+                    }
+                ) {
+                    Text(stringResource(id = R.string.close))
                 }
-            ) {
-                Text(stringResource(id = R.string.close))
-            }
-        },
+            },
             title = {
                 Text(
                     text = stringResource(id = R.string.decibel_values),

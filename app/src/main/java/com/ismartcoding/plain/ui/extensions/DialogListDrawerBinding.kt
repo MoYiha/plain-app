@@ -44,7 +44,6 @@ fun DialogListDrawerBinding.initToggleMode(
             findItem(R.id.sort)?.isVisible = !toggleMode
             findItem(R.id.more)?.isVisible = !toggleMode
         }
-        player.isVisible = !toggleMode && viewModel.dataType == DataType.AUDIO
         topAppBar.toolbar.toggleNavigationIcon(toggleMode)
         topAppBar.toolbar.updateTitle(viewModel, list.rv, title, viewModel.total)
     }

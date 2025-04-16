@@ -1,11 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.PlainActivity" parent="Theme.Material3.DayNight.NoActionBar">
-<!--        <item name="windowActionModeOverlay">true</item>-->
-<!--        <item name="windowActionBar">false</item>-->
-<!--        <item name="windowNoTitle">true</item>-->
-<!--        <item name="android:windowActionModeOverlay">true</item>-->
-<!--        <item name="android:windowContentOverlay">@color/canvas</item>-->
-<!--        <item name="android:windowBackground">@color/canvas</item>-->
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 
@@ -75,7 +69,7 @@
     <style name="PlainMaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorSecondary">@color/primary</item>
-        <item name="android:background">@color/canvas</item>
+        <item name="android:background">?attr/colorSurface</item>
         <item name="materialAlertDialogTitleTextStyle">@style/PlainMaterialAlertDialogTitleTextStyle</item>
         <item name="materialAlertDialogBodyTextStyle">@style/PlainMaterialAlertDialogBodyTextStyle</item>
         <item name="buttonBarPositiveButtonStyle">@style/PlainButtonStyle</item>
@@ -116,5 +110,17 @@
         <item name="android:textColorHint">@color/secondary</item>
         <item name="android:tint">@color/primary</item>
         <item name="actionMenuTextColor">@color/primary</item>
+    </style>
+
+    <style name="BottomSheetDialogTheme" parent="Theme.Material3.DayNight.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
+    </style>
+
+    <style name="CustomBottomSheetStyle" parent="Widget.Material3.BottomSheet">
+        <item name="behavior_draggable">true</item>
+        <item name="behavior_expandedOffset">0dp</item>
+        <item name="behavior_peekHeight">auto</item>
+        <item name="behavior_fitToContents">false</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.LargeComponent</item>
     </style>
 </resources>

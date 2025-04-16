@@ -91,7 +91,6 @@ import com.ismartcoding.plain.receivers.NetworkStateReceiver
 import com.ismartcoding.plain.receivers.PlugInControlReceiver
 import com.ismartcoding.plain.services.PNotificationListenerService
 import com.ismartcoding.plain.services.ScreenMirrorService
-import com.ismartcoding.plain.ui.audio.AudioPlayerDialog
 import com.ismartcoding.plain.ui.helpers.DialogHelper
 import com.ismartcoding.plain.ui.helpers.FilePickHelper
 import com.ismartcoding.plain.ui.helpers.WebHelper
@@ -452,7 +451,6 @@ class MainActivity : AppCompatActivity() {
                     if (mimeType.startsWith("audio/") ||
                         setOf("application/ogg", "application/x-ogg", "application/itunes").contains(mimeType)
                     ) {
-                        AudioPlayerDialog().show()
                         Permissions.checkNotification(this@MainActivity, R.string.audio_notification_prompt) {
                             AudioPlayer.play(this@MainActivity, DPlaylistAudio.fromPath(this@MainActivity, uri.toString()))
                         }

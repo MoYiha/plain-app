@@ -55,8 +55,8 @@ fun NavHostController.navigateTextFile(path: String, title: String = "", mediaId
     }
 }
 
-fun NavHostController.navigateTags(dateType: DataType) {
-    navigate(Routing.Tags(dateType.value)) {
+fun NavHostController.navigateTags(dataType: DataType) {
+    navigate(Routing.Tags(dataType.value)) {
         launchSingleTop = true
     }
 }
@@ -73,8 +73,14 @@ fun NavHostController.navigateVideos(bucketId: String = "") {
     }
 }
 
-fun NavHostController.navigateMediaFolders(dateType: DataType) {
-    navigate(Routing.MediaFolders(dateType.value)) {
+fun NavHostController.navigateMediaFolders(dataType: DataType) {
+    navigate(Routing.MediaFolders(dataType.value)) {
+        launchSingleTop = true
+    }
+}
+
+fun NavHostController.navigateAudio(bucketId: String = "") {
+    navigate(Routing.Audio(bucketId)) {
         launchSingleTop = true
     }
 }

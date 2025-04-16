@@ -28,6 +28,7 @@ fun AddFeedDialog(viewModel: FeedsViewModel) {
     if (viewModel.showAddDialog.value) {
         val focusManager = LocalFocusManager.current
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = {
                 viewModel.showAddDialog.value = false
             },

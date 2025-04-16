@@ -1,8 +1,6 @@
 package com.ismartcoding.plain.ui.helpers
 
 import android.widget.Toast
-import com.apollographql.apollo3.api.ApolloResponse
-import com.apollographql.apollo3.api.Operation
 import com.ismartcoding.lib.channel.sendEvent
 import com.ismartcoding.lib.helpers.CoroutinesHelper.coIO
 import com.ismartcoding.lib.helpers.CoroutinesHelper.coMain
@@ -10,7 +8,6 @@ import com.ismartcoding.lib.isTPlus
 import com.ismartcoding.plain.MainApp
 import com.ismartcoding.plain.R
 import com.ismartcoding.plain.api.ApiResult
-import com.ismartcoding.plain.api.GraphqlApiResult
 import com.ismartcoding.plain.features.ConfirmDialogEvent
 import com.ismartcoding.plain.features.LoadingDialogEvent
 import com.ismartcoding.plain.features.locale.LocaleHelper.getString
@@ -40,14 +37,6 @@ object DialogHelper {
 
     fun showMessage(ex: Throwable) {
         showMessage(ex.toString())
-    }
-
-    fun <D : Operation.Data> showMessage(response: ApolloResponse<D>) {
-        showMessage(response.errors?.joinToString(", ") { it.message } ?: "")
-    }
-
-    fun <D : Operation.Data> showMessage(result: GraphqlApiResult<D>) {
-        showMessage(result.getErrorMessage())
     }
 
     fun showLoading(message: String = "") {

@@ -145,6 +145,7 @@ fun ClearFeedsDialog(
 ) {
     val scope = rememberCoroutineScope()
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = {
             viewModel.showClearFeedsDialog.value = false
         },

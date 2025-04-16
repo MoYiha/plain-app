@@ -41,7 +41,6 @@ import com.ismartcoding.plain.enums.TextFileType
 import com.ismartcoding.plain.features.Permissions
 import com.ismartcoding.plain.features.AudioPlayer
 import com.ismartcoding.plain.helpers.AppHelper
-import com.ismartcoding.plain.ui.audio.AudioPlayerDialog
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.MediaPreviewerState
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.TransformImageView
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.rememberTransformItemState
@@ -81,7 +80,7 @@ fun ChatFiles(
                                 )
                             }
                         } else if (path.isAudioFast()) {
-                            AudioPlayerDialog().show()
+//                            AudioPlayerDialog().show()
                             Permissions.checkNotification(context, R.string.audio_notification_prompt) {
                                 AudioPlayer.play(context, DPlaylistAudio.fromPath(context, path))
                             }

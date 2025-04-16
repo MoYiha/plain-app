@@ -53,6 +53,7 @@ fun UpdateDialog(viewModel: UpdateViewModel) {
 
     if (viewModel.updateDialogVisible.value) {
         AlertDialog(
+            containerColor = MaterialTheme.colorScheme.surface,
             modifier = Modifier.heightIn(max = 400.dp),
             onDismissRequest = { viewModel.updateDialogVisible.value = false },
             icon = {

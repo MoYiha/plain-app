@@ -27,7 +27,7 @@ import com.ismartcoding.plain.ui.theme.bottomAppBarContainer
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun FilesSelectModeBottomActions(
+fun DocFilesSelectModeBottomActions(
     viewModel: DocsViewModel,
 ) {
     val context = LocalContext.current

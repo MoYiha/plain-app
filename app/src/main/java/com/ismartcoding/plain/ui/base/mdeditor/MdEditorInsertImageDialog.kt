@@ -92,6 +92,7 @@ fun MdEditorInsertImageDialog(
     }
 
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         onDismissRequest = {
             viewModel.showInsertImage = false
         },

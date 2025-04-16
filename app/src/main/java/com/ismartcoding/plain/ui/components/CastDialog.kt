@@ -75,6 +75,7 @@ fun CastDialog(viewModel: CastViewModel) {
     }
 
     AlertDialog(
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth(),
         onDismissRequest = onDismiss,
         title = {

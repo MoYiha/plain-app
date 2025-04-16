@@ -102,25 +102,6 @@
         <item name="android:textSize">@dimen/text_size_normal</item>
     </style>
 
-    <style name="ChatInput">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:minHeight">@dimen/input_height</item>
-        <item name="android:maxHeight">@dimen/chat_input_max_height</item>
-        <item name="android:fontFamily">@font/noto_regular</item>
-        <item name="android:imeOptions">actionDone</item>
-        <item name="android:background">@drawable/edit_text_background</item>
-        <item name="android:inputType">textMultiLine</item>
-        <item name="android:padding">@dimen/size_sm</item>
-        <item name="android:focusable">true</item>
-        <item name="android:focusableInTouchMode">true</item>
-        <item name="android:textColor">@color/primary</item>
-        <item name="android:textColorHint">@color/secondary</item>
-        <!--        <item name="android:textCursorDrawable">@drawable/ic_edit_text_cursor</item>-->
-        <item name="android:textSize">@dimen/text_size_normal</item>
-        <item name="android:hint">@string/chat_input_hint</item>
-    </style>
-
     <style name="EditText.Single">
         <item name="android:lines">1</item>
         <item name="android:maxLines">1</item>
@@ -128,17 +109,6 @@
 
     <style name="EditText.Inline">
         <item name="layout_constrainedWidth">true</item>
-    </style>
-
-    <style name="FormLabel">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">@dimen/size_xxl</item>
-        <item name="android:layout_marginStart">@dimen/size_normal</item>
-        <item name="android:layout_marginEnd">@dimen/size_normal</item>
-        <item name="android:gravity">center_vertical</item>
-        <item name="android:fontFamily">@font/noto_regular</item>
-        <item name="android:textColor">@color/primary</item>
-        <item name="android:textSize">@dimen/text_size_normal</item>
     </style>
 
     <style name="TopAppBar">
@@ -221,22 +191,6 @@
         <item name="loadingText">@string/saving</item>
     </style>
 
-    <style name="Icon">
-        <item name="android:scaleType">centerInside</item>
-    </style>
-
-    <style name="Icon.Large">
-        <item name="android:layout_width">@dimen/icon_size_xl</item>
-        <item name="android:layout_height">@dimen/icon_size_xl</item>
-    </style>
-
-    <style name="Icon.Chat" parent="Icon.Large">
-        <item name="android:layout_marginStart">@dimen/size_sm</item>
-        <item name="android:background">?android:attr/actionBarItemBackground</item>
-        <item name="layout_constraintBottom_toBottomOf">parent</item>
-        <item name="layout_constraintTop_toTopOf">parent</item>
-    </style>
-
     <style name="Fab">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
@@ -259,19 +213,6 @@
         <item name="android:orientation">horizontal</item>
     </style>
 
-    <style name="Note">
-        <item name="android:textColor">@color/secondary</item>
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginStart">@dimen/size_lg</item>
-        <item name="android:layout_marginEnd">@dimen/size_lg</item>
-        <item name="android:textIsSelectable">true</item>
-    </style>
-
-    <style name="Note.Bottom">
-        <item name="android:layout_marginTop">@dimen/size_sm</item>
-    </style>
-
     <style name="RVCenterText">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
@@ -282,60 +223,6 @@
         <item name="android:textSize">@dimen/text_size_lg</item>
     </style>
 
-    <style name="ChatItemDate">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_gravity">center_horizontal</item>
-        <item name="android:layout_marginVertical">@dimen/size_sm</item>
-        <item name="android:textColor">@color/secondary</item>
-        <item name="android:textIsSelectable">true</item>
-        <item name="android:textSize">@dimen/text_size_normal</item>
-    </style>
-
-    <style name="ChatItemContainer">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:paddingTop">@dimen/size_sm</item>
-        <item name="android:paddingBottom">@dimen/size_sm</item>
-    </style>
-
-    <style name="ChatItemContent" parent="Column">
-        <item name="android:layout_marginHorizontal">@dimen/size_normal</item>
-        <item name="android:layout_marginTop">@dimen/size_sm</item>
-        <item name="layout_constraintStart_toStartOf">parent</item>
-        <item name="layout_constraintTop_toBottomOf">@+id/name</item>
-    </style>
-
-    <style name="ChatItemContent.Section" parent="ChatItemContent">
-        <item name="rRadius">@dimen/section_radius</item>
-        <item name="rStrokeColor">@color/primary</item>
-        <item name="rStrokeWidth">@dimen/border_width</item>
-    </style>
-
-    <style name="HomeItemContainer" parent="Column">
-        <item name="android:paddingTop">@dimen/size_sm</item>
-        <item name="android:paddingBottom">@dimen/size_sm</item>
-    </style>
-
-    <style name="HomeItemTitle">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginStart">@dimen/size_normal</item>
-        <item name="android:fontFamily">@font/noto_medium</item>
-        <item name="android:textColor">@color/primary</item>
-        <item name="android:textSize">@dimen/text_size_normal</item>
-    </style>
-
-    <style name="HomeItemContent" parent="Column">
-        <item name="android:layout_marginHorizontal">@dimen/size_normal</item>
-        <item name="android:layout_marginTop">@dimen/size_sm</item>
-    </style>
-
-    <style name="HomeItemContent.Section" parent="HomeItemContent">
-        <item name="rRadius">@dimen/section_radius</item>
-        <item name="rStrokeColor">@color/primary</item>
-        <item name="rStrokeWidth">@dimen/border_width</item>
-    </style>
 
 
     <style name="Tabs">
@@ -352,10 +239,6 @@
 
     <style name="tabTextAppearance" parent="@android:style/TextAppearance.Widget.TabWidget">
         <item name="android:fontFamily">@font/noto_medium</item>
-    </style>
-
-    <style name="Tabs.Top" parent="Tabs">
-        <item name="tabIndicator">@drawable/top_tab_indicator</item>
     </style>
 
     <style name="SeekBar">

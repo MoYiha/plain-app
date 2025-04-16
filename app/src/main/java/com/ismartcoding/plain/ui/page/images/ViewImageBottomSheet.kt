@@ -95,6 +95,9 @@ fun ViewImageBottomSheet(
     ) {
         LazyColumn {
             item {
+                VerticalSpace(32.dp)
+            }
+            item {
                 ActionButtons {
                     if (!viewModel.showSearchBar.value) {
                         PIconTextActionButton(
@@ -189,5 +192,3 @@ fun ViewImageBottomSheet(
         }
     }
 }
-
-

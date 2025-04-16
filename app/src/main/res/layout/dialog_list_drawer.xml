@@ -35,14 +35,6 @@
                 android:layout_gravity="bottom"
                 android:visibility="gone" />
 
-            <com.ismartcoding.plain.ui.audio.BottomAudioPlayerView
-                android:id="@+id/player"
-                app:layout_anchor="@id/list"
-                app:layout_anchorGravity="start|bottom"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
-
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     </com.ismartcoding.lib.drawer.FullDraggableContainer>

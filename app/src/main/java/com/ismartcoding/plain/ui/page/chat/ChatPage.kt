@@ -392,7 +392,7 @@ fun ChatPage(
                 )
             }
         },
-        content = { paddingValues ->
+        content = {
             PullToRefresh(
                 refreshLayoutState = refreshState,
             ) {
@@ -400,10 +400,6 @@ fun ChatPage(
                     state = scrollState,
                 ) {
                     LazyColumn(
-                        modifier =
-                        Modifier
-                            .padding(bottom = paddingValues.calculateBottomPadding())
-                            .fillMaxSize(),
                         state = scrollState,
                         reverseLayout = true,
                         verticalArrangement = Arrangement.Top,

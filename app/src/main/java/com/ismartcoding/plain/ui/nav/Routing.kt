@@ -4,16 +4,13 @@ import kotlinx.serialization.Serializable
 
 class Routing {
     @Serializable
-    object Home
+    object Root
 
     @Serializable
     object Settings
 
     @Serializable
     object Language
-
-    @Serializable
-    object ColorAndStyle
 
     @Serializable
     object DarkTheme
@@ -103,7 +100,7 @@ class Routing {
     object FeedSettings
 
     @Serializable
-    object Audio
+    data class Audio(val bucketId: String = "")
 
     @Serializable
     object AudioPlayer

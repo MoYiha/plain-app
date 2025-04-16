@@ -75,23 +75,6 @@ Your donation is highly appreciated. Thank you!
 
 PlainApp requires Android 9.0 or higher.
 
-## Roadmap
-
-- ❌ Not Started
-- 🟡 In Progress
-- ✅ Completed
-
-| Feature                                                   | WEB | APP |
-|-----------------------------------------------------------|:---:|:---:|
-| Material You Theme                                        |  ✅  | 🟡  |
-| Share Files via Web Link                                  |  ❌  |  ❌  |
-| Messaging between Phones with PlainApp (Bluetooth, Wi-Fi) |  ❌  |  ❌  |
-| Translation Dictionary                                    |  ❌  |  ❌  |
-| Books                                                     |  ❌  |  ❌  |
-| To do list                                                |  ❌  |  ❌  |
-
-The ultimate goal is to turn smartphones into personal data and knowledge managers, allowing individuals to more easily exchange knowledge and data with each other through PlainApp.
-
 ## FAQ
 
 [http://docs.plain.icu/faq.html](http://docs.plain.icu/faq.html)
@@ -101,15 +84,6 @@ The ultimate goal is to turn smartphones into personal data and knowledge manage
 It's worth mentioning that this is an open-source application.
 If you have doubts, you can either build your own version or choose not to use it.
 If you encounter any issues, feel free to open an issue on GitHub. I am always happy to help. Please do not give a one-star rating arbitrarily.
-
-## Download GraphQL schema from PlainBox
-
-```bash
-./gradlew downloadApolloSchema \
-  --endpoint="http://<box-ip>:8080/graphql" \
-  --schema="app/src/main/graphql/com/ismartcoding/plain/schema.graphqls" \
-  --header="Authorization: Bearer <token>"
-```
 
 ## Build
 

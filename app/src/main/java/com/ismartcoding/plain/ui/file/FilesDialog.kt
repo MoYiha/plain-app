@@ -46,7 +46,6 @@ import com.ismartcoding.plain.helpers.ShareHelper
 import com.ismartcoding.plain.ui.BaseDialog
 import com.ismartcoding.plain.ui.PdfViewerDialog
 import com.ismartcoding.plain.ui.TextEditorDialog
-import com.ismartcoding.plain.ui.audio.AudioPlayerDialog
 import com.ismartcoding.plain.ui.extensions.checkPermission
 import com.ismartcoding.plain.ui.extensions.checkable
 import com.ismartcoding.plain.ui.extensions.highlightTitle
@@ -154,7 +153,7 @@ class FilesDialog(val fileType: FilesType = FilesType.INTERNAL_STORAGE) : BaseDi
                     )
                 } else if (m.data.path.isAudioFast()) {
                     try {
-                        AudioPlayerDialog().show()
+                        //AudioPlayerDialog().show()
                         Permissions.checkNotification(requireContext(), R.string.audio_notification_prompt) {
                             AudioPlayer.play(requireContext(), DPlaylistAudio.fromPath(context, m.data.path))
                         }

@@ -8,34 +8,23 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,36 +46,18 @@ import com.ismartcoding.lib.channel.receiveEventHandler
 import com.ismartcoding.lib.extensions.isGestureInteractionMode
 import com.ismartcoding.lib.helpers.CoroutinesHelper.withIO
 import com.ismartcoding.plain.R
-import com.ismartcoding.plain.data.DMediaBucket
 import com.ismartcoding.plain.enums.AppFeatureType
 import com.ismartcoding.plain.features.PermissionsResultEvent
-import com.ismartcoding.plain.features.locale.LocaleHelper
-import com.ismartcoding.plain.features.media.CastPlayer
 import com.ismartcoding.plain.preference.VideoGridCellsPerRowPreference
 import com.ismartcoding.plain.preference.VideoSortByPreference
-import com.ismartcoding.plain.ui.base.ActionButtonMoreWithMenu
-import com.ismartcoding.plain.ui.base.ActionButtonSearch
-import com.ismartcoding.plain.ui.base.HorizontalSpace
-import com.ismartcoding.plain.ui.base.NavigationBackIcon
-import com.ismartcoding.plain.ui.base.NavigationCloseIcon
 import com.ismartcoding.plain.ui.base.NeedPermissionColumn
 import com.ismartcoding.plain.ui.base.NoDataColumn
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemCast
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemCellsPerRow
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemSelect
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemSort
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemTags
 import com.ismartcoding.plain.ui.base.PFilterChip
-import com.ismartcoding.plain.ui.base.PIconButton
-import com.ismartcoding.plain.ui.base.PMiniOutlineButton
 import com.ismartcoding.plain.ui.base.PScaffold
-import com.ismartcoding.plain.ui.base.PTopAppBar
 import com.ismartcoding.plain.ui.base.RadioDialog
 import com.ismartcoding.plain.ui.base.RadioDialogOption
 import com.ismartcoding.plain.ui.base.VerticalSpace
-import com.ismartcoding.plain.ui.base.dragselect.DragSelectState
 import com.ismartcoding.plain.ui.base.dragselect.gridDragSelect
-import com.ismartcoding.plain.ui.base.dragselect.rememberDragSelectState
 import com.ismartcoding.plain.ui.base.fastscroll.LazyVerticalGridScrollbar
 import com.ismartcoding.plain.ui.base.pullrefresh.LoadMoreRefreshContent
 import com.ismartcoding.plain.ui.base.pullrefresh.PullToRefresh
@@ -95,19 +66,15 @@ import com.ismartcoding.plain.ui.base.pullrefresh.rememberRefreshLayoutState
 import com.ismartcoding.plain.ui.base.tabs.PScrollableTabRow
 import com.ismartcoding.plain.ui.components.CastDialog
 import com.ismartcoding.plain.ui.components.FileSortDialog
-import com.ismartcoding.plain.ui.components.ListSearchBar
 import com.ismartcoding.plain.ui.components.VideoGridItem
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.MediaPreviewer
-import com.ismartcoding.plain.ui.components.mediaviewer.previewer.rememberPreviewerState
-import com.ismartcoding.plain.ui.nav.navigateMediaFolders
-import com.ismartcoding.plain.ui.nav.navigateTags
 import com.ismartcoding.plain.ui.extensions.reset
 import com.ismartcoding.plain.ui.models.CastViewModel
 import com.ismartcoding.plain.ui.models.MediaFoldersViewModel
 import com.ismartcoding.plain.ui.models.TagsViewModel
 import com.ismartcoding.plain.ui.models.VideosViewModel
-import com.ismartcoding.plain.ui.models.enterSearchMode
 import com.ismartcoding.plain.ui.models.exitSearchMode
+import com.ismartcoding.plain.ui.page.root.TopBarVideos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -125,40 +92,29 @@ fun VideosPage(
     val context = LocalContext.current
     val view = LocalView.current
     val window = (view.context as Activity).window
-    val itemsState by viewModel.itemsFlow.collectAsState()
+    val videosState = VideosPageState.create(
+        videosViewModel = viewModel,
+        tagsViewModel = tagsViewModel,
+        bucketViewModel = bucketViewModel,
+    )
+    val pagerState = videosState.pagerState
+    val scrollBehavior = videosState.scrollBehavior
+    val tagsState = videosState.tagsState
+    val previewerState = videosState.previewerState
+    val tagsMapState = videosState.tagsMapState
+    val dragSelectState = videosState.dragSelectState
+    val itemsState = videosState.itemsState
+    val cellsPerRow = videosState.cellsPerRow
+    val bucketsMap = videosState.bucketsMap
+
     val configuration = LocalConfiguration.current
-    val bucketsState by bucketViewModel.itemsFlow.collectAsState()
-    val bucketsMap = remember(bucketsState) {
-        derivedStateOf {
-            bucketsState.associateBy { it.id }
-        }
-    }
-
-    val previewerState = rememberPreviewerState()
-    val tagsState by tagsViewModel.itemsFlow.collectAsState()
-    val tagsMapState by tagsViewModel.tagsMapFlow.collectAsState()
     val scope = rememberCoroutineScope()
-    var hasPermission by remember {
-        mutableStateOf(AppFeatureType.FILES.hasPermission(context))
-    }
-
-    val scrollStateMap = remember {
-        mutableStateMapOf<Int, LazyGridState>()
-    }
-    val pagerState = rememberPagerState(pageCount = { viewModel.tabs.value.size })
-    val dragSelectState = rememberDragSelectState({ scrollStateMap[pagerState.currentPage] })
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(canScroll = {
-        (scrollStateMap[pagerState.currentPage]?.firstVisibleItemIndex ?: 0) > 0 && !dragSelectState.selectMode
-    })
     var isFirstTime by remember { mutableStateOf(true) }
 
-    var cellsPerRow by remember { mutableIntStateOf(VideoGridCellsPerRowPreference.default) }
     val density = LocalDensity.current
-    val imageWidthPx = remember(cellsPerRow) {
-        density.run { ((configuration.screenWidthDp.dp - ((cellsPerRow - 1) * 2).dp) / cellsPerRow).toPx().toInt() }
+    val imageWidthPx = remember(cellsPerRow.value) {
+        density.run { ((configuration.screenWidthDp.dp - ((cellsPerRow.value - 1) * 2).dp) / cellsPerRow.value).toPx().toInt() }
     }
-
-    var showCellsPerRowDialog by remember { mutableStateOf(false) }
 
     val events = remember { mutableStateListOf<Job>() }
 
@@ -177,12 +133,13 @@ fun VideosPage(
     LaunchedEffect(Unit) {
         if (!once.value) {
             once.value = true
+            viewModel.hasPermission.value = AppFeatureType.FILES.hasPermission(context)
             viewModel.bucketId.value = bucketId
             bucketViewModel.dataType.value = viewModel.dataType
             tagsViewModel.dataType.value = viewModel.dataType
-            if (hasPermission) {
+            if (viewModel.hasPermission.value) {
                 scope.launch(Dispatchers.IO) {
-                    cellsPerRow = VideoGridCellsPerRowPreference.getAsync(context)
+                    cellsPerRow.value = VideoGridCellsPerRowPreference.getAsync(context)
                     viewModel.sortBy.value = VideoSortByPreference.getValueAsync(context)
                     viewModel.loadAsync(context, tagsViewModel)
                     bucketViewModel.loadAsync(context)
@@ -196,7 +153,7 @@ fun VideosPage(
         }
         events.add(
             receiveEventHandler<PermissionsResultEvent> {
-                hasPermission = AppFeatureType.FILES.hasPermission(context)
+                viewModel.hasPermission.value = AppFeatureType.FILES.hasPermission(context)
                 scope.launch(Dispatchers.IO) {
                     viewModel.sortBy.value = VideoSortByPreference.getValueAsync(context)
                     viewModel.loadAsync(context, tagsViewModel)
@@ -246,7 +203,7 @@ fun VideosPage(
         }
         scope.launch {
             scrollBehavior.reset()
-            scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
+            viewModel.scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
         }
         scope.launch(Dispatchers.IO) {
             viewModel.loadAsync(context, tagsViewModel)
@@ -272,22 +229,22 @@ fun VideosPage(
         }
     }
 
-    if (showCellsPerRowDialog) {
+    if (viewModel.showCellsPerRowDialog.value) {
         RadioDialog(
             title = stringResource(R.string.cells_per_row),
             options = IntRange(2, 10).map { value ->
                 RadioDialogOption(
                     text = value.toString(),
-                    selected = value == cellsPerRow,
+                    selected = value == cellsPerRow.value,
                 ) {
                     scope.launch(Dispatchers.IO) {
                         VideoGridCellsPerRowPreference.putAsync(context, value)
-                        cellsPerRow = value
+                        cellsPerRow.value = value
                     }
                 }
             },
         ) {
-            showCellsPerRowDialog = false
+            viewModel.showCellsPerRowDialog.value = false
         }
     }
 
@@ -309,89 +266,13 @@ fun VideosPage(
 
     PScaffold(
         topBar = {
-            if (viewModel.showSearchBar.value) {
-                ListSearchBar(
-                    viewModel = viewModel,
-                    onSearch = onSearch
-                )
-                return@PScaffold
-            }
-            PTopAppBar(
-                modifier = Modifier.combinedClickable(onClick = {}, onDoubleClick = {
-                    scope.launch {
-                        scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
-                    }
-                }),
+            TopBarVideos(
                 navController = navController,
-                navigationIcon = {
-                    if (dragSelectState.selectMode) {
-                        NavigationCloseIcon {
-                            dragSelectState.exitSelectMode()
-                        }
-                    } else if (castViewModel.castMode.value) {
-                        NavigationCloseIcon {
-                            castViewModel.exitCastMode()
-                        }
-                    } else {
-                        NavigationBackIcon {
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                title = getPageTitle(viewModel, castViewModel, bucketsMap.value[bucketId], dragSelectState),
-                scrollBehavior = scrollBehavior,
-                actions = {
-                    if (!hasPermission) {
-                        return@PTopAppBar
-                    }
-                    if (castViewModel.castMode.value) {
-                        return@PTopAppBar
-                    }
-                    if (dragSelectState.selectMode) {
-                        PMiniOutlineButton(
-                            text = stringResource(if (dragSelectState.isAllSelected(itemsState)) R.string.unselect_all else R.string.select_all),
-                            onClick = {
-                                dragSelectState.toggleSelectAll(itemsState)
-                            },
-                        )
-                        HorizontalSpace(dp = 8.dp)
-                    } else {
-                        ActionButtonSearch {
-                            viewModel.enterSearchMode()
-                        }
-                        if (viewModel.bucketId.value.isEmpty()) {
-                            PIconButton(
-                                icon = Icons.Outlined.Folder,
-                                contentDescription = stringResource(R.string.folders),
-                                tint = MaterialTheme.colorScheme.onSurface,
-                            ) {
-                                navController.navigateMediaFolders(viewModel.dataType)
-                            }
-                        }
-                        ActionButtonMoreWithMenu { dismiss ->
-                            PDropdownMenuItemSelect(onClick = {
-                                dismiss()
-                                dragSelectState.enterSelectMode()
-                            })
-                            PDropdownMenuItemTags(onClick = {
-                                dismiss()
-                                navController.navigateTags(viewModel.dataType)
-                            })
-                            PDropdownMenuItemSort(onClick = {
-                                dismiss()
-                                viewModel.showSortDialog.value = true
-                            })
-                            PDropdownMenuItemCast(onClick = {
-                                dismiss()
-                                castViewModel.showCastDialog.value = true
-                            })
-                            PDropdownMenuItemCellsPerRow(onClick = {
-                                dismiss()
-                                showCellsPerRowDialog = true
-                            })
-                        }
-                    }
-                },
+                bucketId = bucketId,
+                videosState = videosState,
+                videosViewModel = viewModel,
+                tagsViewModel = tagsViewModel,
+                castViewModel = castViewModel,
             )
         },
         bottomBar = {
@@ -399,12 +280,12 @@ fun VideosPage(
                 visible = dragSelectState.showBottomActions(),
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }) {
-                FilesSelectModeBottomActions(viewModel, tagsViewModel, tagsState, dragSelectState)
+                VideoFilesSelectModeBottomActions(viewModel, tagsViewModel, tagsState, dragSelectState)
             }
         },
     ) { paddingValues ->
-        if (!hasPermission) {
-            NeedPermissionColumn(AppFeatureType.FILES.getPermission()!!)
+        if (!viewModel.hasPermission.value) {
+            NeedPermissionColumn(R.drawable.video, AppFeatureType.FILES.getPermission()!!)
             return@PScaffold
         }
 
@@ -441,7 +322,6 @@ fun VideosPage(
         }
 
         HorizontalPager(state = pagerState) { index ->
-
             PullToRefresh(
                 refreshLayoutState = topRefreshLayoutState,
             ) {
@@ -452,12 +332,12 @@ fun VideosPage(
                 ) {
                     if (itemsState.isNotEmpty()) {
                         val scrollState = rememberLazyGridState()
-                        scrollStateMap[index] = scrollState
+                        viewModel.scrollStateMap[index] = scrollState
                         LazyVerticalGridScrollbar(
                             state = scrollState,
                         ) {
                             LazyVerticalGrid(
-                                columns = GridCells.Fixed(cellsPerRow),
+                                columns = GridCells.Fixed(cellsPerRow.value),
                                 state = scrollState,
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -484,7 +364,7 @@ fun VideosPage(
                                         viewModel,
                                         castViewModel,
                                         m,
-                                        showSize = cellsPerRow < 6,
+                                        showSize = cellsPerRow.value < 6,
                                         previewerState,
                                         dragSelectState,
                                         imageWidthPx,
@@ -541,20 +421,4 @@ fun VideosPage(
             }
         },
     )
-}
-
-@Composable
-fun getPageTitle(viewModel: VideosViewModel, castViewModel: CastViewModel, bucket: DMediaBucket?, dragSelectState: DragSelectState): String {
-    val videoName = bucket?.name ?: stringResource(id = R.string.videos)
-    return if (castViewModel.castMode.value) {
-        stringResource(id = R.string.cast_mode) + " - " + CastPlayer.currentDevice?.description?.device?.friendlyName
-    } else if (dragSelectState.selectMode) {
-        LocaleHelper.getStringF(R.string.x_selected, "count", dragSelectState.selectedIds.size)
-    } else if (viewModel.tag.value != null) {
-        videoName + " - " + viewModel.tag.value!!.name
-    } else if (viewModel.trash.value) {
-        stringResource(id = R.string.videos) + " - " + stringResource(id = R.string.trash)
-    } else {
-        videoName
-    }
 }

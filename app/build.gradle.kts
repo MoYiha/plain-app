@@ -6,7 +6,6 @@ plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
-    id("com.apollographql.apollo3") version libs.versions.apollo
     id("kotlin-parcelize")
     id("androidx.room")
     id("com.google.devtools.ksp")
@@ -138,13 +137,6 @@ android {
     }
     namespace = "com.ismartcoding.plain"
 
-    apollo {
-        service("service") {
-            packageName.set("com.ismartcoding.plain")
-            mapScalar("Time", "java.util.Date")
-        }
-    }
-
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -179,16 +171,10 @@ dependencies {
     implementation(libs.media3.dash)
     implementation(libs.media3.hls)
 
-    implementation(libs.apollo.runtime)
-    implementation(libs.apollo.normalized.cache)
-    implementation(libs.apollo.normalized.cache.sqlite)
-    implementation(libs.apollo.adapters)
-
     implementation(libs.androidx.viewpager2)
     implementation(libs.androidx.preference.ktx)
 
     implementation(libs.androidx.core.splashscreen)
-    implementation(libs.snake.yaml)
 
     // CameraX
     implementation(libs.camera.core)
@@ -218,8 +204,6 @@ dependencies {
 //    annotationProcessor(libs.room.compiler)
     ksp(libs.room.compiler)
 
-    implementation(libs.openai.client)
-
     // coil: https://coil-kt.github.io/coil/changelog/
     implementation(libs.coil)
     implementation(libs.coil.video)
@@ -236,9 +220,11 @@ dependencies {
     // https://developer.android.com/jetpack/androidx/releases/datastore
     implementation(libs.androidx.datastore.preferences)
 
-//    implementation("org.eclipse.jgit:org.eclipse.jgit:6.1.0.202203080745-r") // TODO: git support
     implementation(libs.zt.zip)
     implementation(project(":lib"))
     debugImplementation(libs.leakcanary.android)
     implementation(kotlin("stdlib", libs.versions.kotlin.get()))
+    
+    // Reorderable library for draggable Compose lists
+    implementation(libs.reorderable)
 }

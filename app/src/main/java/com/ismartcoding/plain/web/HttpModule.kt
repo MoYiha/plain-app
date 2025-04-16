@@ -154,7 +154,7 @@ object HttpModule {
                 },
             )
         }
-
+        
         intercept(ApplicationCallPipeline.Plugins) {
             if (!TempData.webEnabled) {
                 call.respond(HttpStatusCode.NotFound)
@@ -486,7 +486,7 @@ object HttpModule {
                 try {
                     lateinit var info: UploadInfo
                     var fileName = ""
-                    call.receiveMultipart().forEachPart { part ->
+                    call.receiveMultipart(formFieldLimit = Long.MAX_VALUE).forEachPart { part ->
                         when (part) {
                             is PartData.FileItem -> {
                                 when (part.name) {

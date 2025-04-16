@@ -8,34 +8,23 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,38 +45,19 @@ import androidx.navigation.NavHostController
 import com.ismartcoding.lib.channel.receiveEventHandler
 import com.ismartcoding.lib.extensions.isGestureInteractionMode
 import com.ismartcoding.lib.helpers.CoroutinesHelper.withIO
-import com.ismartcoding.lib.logcat.LogCat
 import com.ismartcoding.plain.R
-import com.ismartcoding.plain.data.DMediaBucket
 import com.ismartcoding.plain.enums.AppFeatureType
 import com.ismartcoding.plain.features.PermissionsResultEvent
-import com.ismartcoding.plain.features.locale.LocaleHelper
-import com.ismartcoding.plain.features.media.CastPlayer
 import com.ismartcoding.plain.preference.ImageGridCellsPerRowPreference
 import com.ismartcoding.plain.preference.ImageSortByPreference
-import com.ismartcoding.plain.ui.base.ActionButtonMoreWithMenu
-import com.ismartcoding.plain.ui.base.ActionButtonSearch
-import com.ismartcoding.plain.ui.base.HorizontalSpace
-import com.ismartcoding.plain.ui.base.NavigationBackIcon
-import com.ismartcoding.plain.ui.base.NavigationCloseIcon
 import com.ismartcoding.plain.ui.base.NeedPermissionColumn
 import com.ismartcoding.plain.ui.base.NoDataColumn
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemCast
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemCellsPerRow
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemSelect
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemSort
-import com.ismartcoding.plain.ui.base.PDropdownMenuItemTags
 import com.ismartcoding.plain.ui.base.PFilterChip
-import com.ismartcoding.plain.ui.base.PIconButton
-import com.ismartcoding.plain.ui.base.PMiniOutlineButton
 import com.ismartcoding.plain.ui.base.PScaffold
-import com.ismartcoding.plain.ui.base.PTopAppBar
 import com.ismartcoding.plain.ui.base.RadioDialog
 import com.ismartcoding.plain.ui.base.RadioDialogOption
 import com.ismartcoding.plain.ui.base.VerticalSpace
-import com.ismartcoding.plain.ui.base.dragselect.DragSelectState
 import com.ismartcoding.plain.ui.base.dragselect.gridDragSelect
-import com.ismartcoding.plain.ui.base.dragselect.rememberDragSelectState
 import com.ismartcoding.plain.ui.base.fastscroll.LazyVerticalGridScrollbar
 import com.ismartcoding.plain.ui.base.pullrefresh.LoadMoreRefreshContent
 import com.ismartcoding.plain.ui.base.pullrefresh.PullToRefresh
@@ -97,29 +67,24 @@ import com.ismartcoding.plain.ui.base.tabs.PScrollableTabRow
 import com.ismartcoding.plain.ui.components.CastDialog
 import com.ismartcoding.plain.ui.components.FileSortDialog
 import com.ismartcoding.plain.ui.components.ImageGridItem
-import com.ismartcoding.plain.ui.components.ListSearchBar
 import com.ismartcoding.plain.ui.components.mediaviewer.previewer.MediaPreviewer
-import com.ismartcoding.plain.ui.components.mediaviewer.previewer.rememberPreviewerState
-import com.ismartcoding.plain.ui.nav.navigateMediaFolders
-import com.ismartcoding.plain.ui.nav.navigateTags
 import com.ismartcoding.plain.ui.extensions.reset
 import com.ismartcoding.plain.ui.models.CastViewModel
 import com.ismartcoding.plain.ui.models.ImagesViewModel
 import com.ismartcoding.plain.ui.models.MediaFoldersViewModel
 import com.ismartcoding.plain.ui.models.TagsViewModel
-import com.ismartcoding.plain.ui.models.enterSearchMode
 import com.ismartcoding.plain.ui.models.exitSearchMode
+import com.ismartcoding.plain.ui.page.root.TopBarImages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlin.system.measureTimeMillis
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ImagesPage(
     navController: NavHostController,
     bucketId: String,
-    viewModel: ImagesViewModel = viewModel(),
+    imagesViewModel: ImagesViewModel = viewModel(),
     tagsViewModel: TagsViewModel = viewModel(),
     bucketViewModel: MediaFoldersViewModel = viewModel(),
     castViewModel: CastViewModel = viewModel(),
@@ -127,39 +92,30 @@ fun ImagesPage(
     val context = LocalContext.current
     val view = LocalView.current
     val window = (view.context as Activity).window
-    val itemsState by viewModel.itemsFlow.collectAsState()
+    val imagesState = ImagesPageState.create(
+        imagesViewModel = imagesViewModel,
+        tagsViewModel = tagsViewModel,
+        bucketViewModel = bucketViewModel,
+    )
+    val pagerState = imagesState.pagerState
+    val scrollBehavior = imagesState.scrollBehavior
+    val tagsState = imagesState.tagsState
+    val previewerState = imagesState.previewerState
+    val tagsMapState = imagesState.tagsMapState
+    val dragSelectState = imagesState.dragSelectState
+    val itemsState = imagesState.itemsState
+    val cellsPerRow = imagesState.cellsPerRow
+
     val configuration = LocalConfiguration.current
-    val bucketsState by bucketViewModel.itemsFlow.collectAsState()
-    val bucketsMap = remember(bucketsState) {
-        derivedStateOf {
-            bucketsState.associateBy { it.id }
-        }
-    }
 
-    val previewerState = rememberPreviewerState()
-    val tagsState by tagsViewModel.itemsFlow.collectAsState()
-    val tagsMapState by tagsViewModel.tagsMapFlow.collectAsState()
     val scope = rememberCoroutineScope()
-    var hasPermission by remember {
-        mutableStateOf(AppFeatureType.FILES.hasPermission(context))
-    }
 
-    val scrollStateMap = remember {
-        mutableStateMapOf<Int, LazyGridState>()
-    }
-    val pagerState = rememberPagerState(pageCount = { viewModel.tabs.value.size })
-    val dragSelectState = rememberDragSelectState({ scrollStateMap[pagerState.currentPage] })
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(canScroll = {
-        (scrollStateMap[pagerState.currentPage]?.firstVisibleItemIndex ?: 0) > 0 && !dragSelectState.selectMode
-    })
     var isFirstTime by remember { mutableStateOf(true) }
 
-    var cellsPerRow by remember { mutableIntStateOf(ImageGridCellsPerRowPreference.default) }
     val density = LocalDensity.current
-    val imageWidthPx = remember(cellsPerRow) {
-        density.run { ((configuration.screenWidthDp.dp - ((cellsPerRow - 1) * 2).dp) / cellsPerRow).toPx().toInt() }
+    val imageWidthPx = remember(cellsPerRow.value) {
+        density.run { ((configuration.screenWidthDp.dp - ((cellsPerRow.value - 1) * 2).dp) / cellsPerRow.value).toPx().toInt() }
     }
-    var showCellsPerRowDialog by remember { mutableStateOf(false) }
 
     val events = remember { mutableStateListOf<Job>() }
 
@@ -167,7 +123,7 @@ fun ImagesPage(
         rememberRefreshLayoutState {
             scope.launch {
                 withIO {
-                    viewModel.loadAsync(context, tagsViewModel)
+                    imagesViewModel.loadAsync(context, tagsViewModel)
                     bucketViewModel.loadAsync(context)
                 }
                 setRefreshState(RefreshContentState.Finished)
@@ -178,29 +134,30 @@ fun ImagesPage(
     LaunchedEffect(Unit) {
         if (!once.value) {
             once.value = true
-            viewModel.bucketId.value = bucketId
-            tagsViewModel.dataType.value = viewModel.dataType
-            bucketViewModel.dataType.value = viewModel.dataType
-            if (hasPermission) {
+            imagesViewModel.hasPermission.value = AppFeatureType.FILES.hasPermission(context)
+            imagesViewModel.bucketId.value = bucketId
+            tagsViewModel.dataType.value = imagesViewModel.dataType
+            bucketViewModel.dataType.value = imagesViewModel.dataType
+            if (imagesViewModel.hasPermission.value) {
                 scope.launch(Dispatchers.IO) {
-                    cellsPerRow = ImageGridCellsPerRowPreference.getAsync(context)
-                    viewModel.sortBy.value = ImageSortByPreference.getValueAsync(context)
-                    viewModel.loadAsync(context, tagsViewModel)
+                    cellsPerRow.value = ImageGridCellsPerRowPreference.getAsync(context)
+                    imagesViewModel.sortBy.value = ImageSortByPreference.getValueAsync(context)
+                    imagesViewModel.loadAsync(context, tagsViewModel)
                     bucketViewModel.loadAsync(context)
                 }
             }
         } else {
             // refresh tabs in case tag name changed in tags page
             scope.launch(Dispatchers.IO) {
-                viewModel.refreshTabsAsync(context, tagsViewModel)
+                imagesViewModel.refreshTabsAsync(context, tagsViewModel)
             }
         }
         events.add(
             receiveEventHandler<PermissionsResultEvent> {
-                hasPermission = AppFeatureType.FILES.hasPermission(context)
+                imagesViewModel.hasPermission.value = AppFeatureType.FILES.hasPermission(context)
                 scope.launch(Dispatchers.IO) {
-                    viewModel.sortBy.value = ImageSortByPreference.getValueAsync(context)
-                    viewModel.loadAsync(context, tagsViewModel)
+                    imagesViewModel.sortBy.value = ImageSortByPreference.getValueAsync(context)
+                    imagesViewModel.loadAsync(context, tagsViewModel)
                 }
             })
     }
@@ -216,10 +173,10 @@ fun ImagesPage(
     }
 
     val onSearch: (String) -> Unit = {
-        viewModel.searchActive.value = false
-        viewModel.showLoading.value = true
+        imagesViewModel.searchActive.value = false
+        imagesViewModel.showLoading.value = true
         scope.launch(Dispatchers.IO) {
-            viewModel.loadAsync(context, tagsViewModel)
+            imagesViewModel.loadAsync(context, tagsViewModel)
         }
     }
 
@@ -236,21 +193,21 @@ fun ImagesPage(
             isFirstTime = false
             return@LaunchedEffect
         }
-        val tab = viewModel.tabs.value.getOrNull(pagerState.currentPage) ?: return@LaunchedEffect
+        val tab = imagesViewModel.tabs.value.getOrNull(pagerState.currentPage) ?: return@LaunchedEffect
         if (tab.value == "all") {
-            viewModel.trash.value = false
-            viewModel.tag.value = null
+            imagesViewModel.trash.value = false
+            imagesViewModel.tag.value = null
         } else {
             val tag = tagsState.find { it.id == tab.value }
-            viewModel.trash.value = false
-            viewModel.tag.value = tag
+            imagesViewModel.trash.value = false
+            imagesViewModel.tag.value = tag
         }
         scope.launch {
             scrollBehavior.reset()
-            scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
+            imagesViewModel.scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
         }
         scope.launch(Dispatchers.IO) {
-            viewModel.loadAsync(context, tagsViewModel)
+            imagesViewModel.loadAsync(context, tagsViewModel)
         }
     }
 
@@ -263,9 +220,9 @@ fun ImagesPage(
             dragSelectState.exitSelectMode()
         } else if (castViewModel.castMode.value) {
             castViewModel.exitCastMode()
-        } else if (viewModel.showSearchBar.value) {
-            if (!viewModel.searchActive.value || viewModel.queryText.value.isEmpty()) {
-                viewModel.exitSearchMode()
+        } else if (imagesViewModel.showSearchBar.value) {
+            if (!imagesViewModel.searchActive.value || imagesViewModel.queryText.value.isEmpty()) {
+                imagesViewModel.exitSearchMode()
                 onSearch("")
             }
         } else {
@@ -273,36 +230,36 @@ fun ImagesPage(
         }
     }
 
-    if (showCellsPerRowDialog) {
+    if (imagesViewModel.showCellsPerRowDialog.value) {
         RadioDialog(
             title = stringResource(R.string.cells_per_row),
             options = IntRange(2, 10).map { value ->
                 RadioDialogOption(
                     text = value.toString(),
-                    selected = value == cellsPerRow,
+                    selected = value == cellsPerRow.value,
                 ) {
                     scope.launch(Dispatchers.IO) {
                         ImageGridCellsPerRowPreference.putAsync(context, value)
-                        cellsPerRow = value
+                        cellsPerRow.value = value
                     }
                 }
             },
         ) {
-            showCellsPerRowDialog = false
+            imagesViewModel.showCellsPerRowDialog.value = false
         }
     }
 
-    ViewImageBottomSheet(viewModel, tagsViewModel, tagsMapState, tagsState, dragSelectState)
+    ViewImageBottomSheet(imagesViewModel, tagsViewModel, tagsMapState, tagsState, dragSelectState)
 
-    if (viewModel.showSortDialog.value) {
-        FileSortDialog(viewModel.sortBy, onSelected = {
+    if (imagesViewModel.showSortDialog.value) {
+        FileSortDialog(imagesViewModel.sortBy, onSelected = {
             scope.launch(Dispatchers.IO) {
                 ImageSortByPreference.putAsync(context, it)
-                viewModel.sortBy.value = it
-                viewModel.loadAsync(context, tagsViewModel)
+                imagesViewModel.sortBy.value = it
+                imagesViewModel.loadAsync(context, tagsViewModel)
             }
         }, onDismiss = {
-            viewModel.showSortDialog.value = false
+            imagesViewModel.showSortDialog.value = false
         })
     }
 
@@ -310,89 +267,9 @@ fun ImagesPage(
 
     PScaffold(
         topBar = {
-            if (viewModel.showSearchBar.value) {
-                ListSearchBar(
-                    viewModel = viewModel,
-                    onSearch = onSearch
-                )
-                return@PScaffold
-            }
-            PTopAppBar(
-                modifier = Modifier.combinedClickable(onClick = {}, onDoubleClick = {
-                    scope.launch {
-                        scrollStateMap[pagerState.currentPage]?.scrollToItem(0)
-                    }
-                }),
-                navController = navController,
-                navigationIcon = {
-                    if (dragSelectState.selectMode) {
-                        NavigationCloseIcon {
-                            dragSelectState.exitSelectMode()
-                        }
-                    } else if (castViewModel.castMode.value) {
-                        NavigationCloseIcon {
-                            castViewModel.exitCastMode()
-                        }
-                    } else {
-                        NavigationBackIcon {
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                title = getPageTitle(viewModel, castViewModel, bucketsMap.value[bucketId], dragSelectState),
-                scrollBehavior = scrollBehavior,
-                actions = {
-                    if (!hasPermission) {
-                        return@PTopAppBar
-                    }
-                    if (castViewModel.castMode.value) {
-                        return@PTopAppBar
-                    }
-                    if (dragSelectState.selectMode) {
-                        PMiniOutlineButton(
-                            text = stringResource(if (dragSelectState.isAllSelected(itemsState)) R.string.unselect_all else R.string.select_all),
-                            onClick = {
-                                dragSelectState.toggleSelectAll(itemsState)
-                            },
-                        )
-                        HorizontalSpace(dp = 8.dp)
-                    } else {
-                        ActionButtonSearch {
-                            viewModel.enterSearchMode()
-                        }
-                        if (viewModel.bucketId.value.isEmpty()) {
-                            PIconButton(
-                                icon = Icons.Outlined.Folder,
-                                contentDescription = stringResource(R.string.folders),
-                                tint = MaterialTheme.colorScheme.onSurface,
-                            ) {
-                                navController.navigateMediaFolders(viewModel.dataType)
-                            }
-                        }
-                        ActionButtonMoreWithMenu { dismiss ->
-                            PDropdownMenuItemSelect(onClick = {
-                                dismiss()
-                                dragSelectState.enterSelectMode()
-                            })
-                            PDropdownMenuItemTags(onClick = {
-                                dismiss()
-                                navController.navigateTags(viewModel.dataType)
-                            })
-                            PDropdownMenuItemSort(onClick = {
-                                dismiss()
-                                viewModel.showSortDialog.value = true
-                            })
-                            PDropdownMenuItemCast(onClick = {
-                                dismiss()
-                                castViewModel.showCastDialog.value = true
-                            })
-                            PDropdownMenuItemCellsPerRow(onClick = {
-                                dismiss()
-                                showCellsPerRowDialog = true
-                            })
-                        }
-                    }
-                },
+            TopBarImages(
+                navController, bucketId, imagesState,
+                imagesViewModel, tagsViewModel, castViewModel,
             )
         },
         bottomBar = {
@@ -400,12 +277,12 @@ fun ImagesPage(
                 visible = dragSelectState.showBottomActions(),
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it }) {
-                FilesSelectModeBottomActions(viewModel, tagsViewModel, tagsState, dragSelectState)
+                ImageFilesSelectModeBottomActions(imagesViewModel, tagsViewModel, tagsState, dragSelectState)
             }
         },
     ) { paddingValues ->
-        if (!hasPermission) {
-            NeedPermissionColumn(AppFeatureType.FILES.getPermission()!!)
+        if (!imagesViewModel.hasPermission.value) {
+            NeedPermissionColumn(R.drawable.image, AppFeatureType.FILES.getPermission()!!)
             return@PScaffold
         }
 
@@ -415,7 +292,7 @@ fun ImagesPage(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                viewModel.tabs.value.forEachIndexed { index, s ->
+                imagesViewModel.tabs.value.forEachIndexed { index, s ->
                     PFilterChip(
                         modifier = Modifier.padding(start = if (index == 0) 0.dp else 8.dp),
                         selected = pagerState.currentPage == index,
@@ -428,7 +305,7 @@ fun ImagesPage(
                             if (index == 0) {
                                 Text(text = s.title + " (" + s.count + ")")
                             } else {
-                                Text(if (viewModel.bucketId.value.isNotEmpty() || viewModel.queryText.value.isNotEmpty()) s.title else "${s.title} (${s.count})")
+                                Text(if (imagesViewModel.bucketId.value.isNotEmpty() || imagesViewModel.queryText.value.isNotEmpty()) s.title else "${s.title} (${s.count})")
                             }
                         }
                     )
@@ -436,7 +313,7 @@ fun ImagesPage(
             }
         }
         if (pagerState.pageCount == 0) {
-            NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
+            NoDataColumn(loading = imagesViewModel.showLoading.value, search = imagesViewModel.showSearchBar.value)
             return@PScaffold
         }
         HorizontalPager(state = pagerState) { index ->
@@ -450,12 +327,12 @@ fun ImagesPage(
                 ) {
                     if (itemsState.isNotEmpty()) {
                         val scrollState = rememberLazyGridState()
-                        scrollStateMap[index] = scrollState
+                        imagesViewModel.scrollStateMap[index] = scrollState
                         LazyVerticalGridScrollbar(
                             state = scrollState,
                         ) {
                             LazyVerticalGrid(
-                                columns = GridCells.Fixed(cellsPerRow),
+                                columns = GridCells.Fixed(cellsPerRow.value),
                                 state = scrollState,
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -467,7 +344,8 @@ fun ImagesPage(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 verticalArrangement = Arrangement.spacedBy(2.dp),
                             ) {
-                                items(itemsState,
+                                items(
+                                    itemsState,
                                     key = {
                                         it.id
                                     },
@@ -479,10 +357,10 @@ fun ImagesPage(
                                     }) { m ->
                                     ImageGridItem(
                                         modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null),
-                                        viewModel,
+                                        imagesViewModel,
                                         castViewModel,
                                         m,
-                                        showSize = cellsPerRow < 6,
+                                        showSize = cellsPerRow.value < 6,
                                         previewerState,
                                         dragSelectState,
                                         imageWidthPx,
@@ -492,14 +370,14 @@ fun ImagesPage(
                                     span = { GridItemSpan(maxLineSpan) },
                                     key = "loadMore"
                                 ) {
-                                    if (itemsState.isNotEmpty() && !viewModel.noMore.value) {
+                                    if (itemsState.isNotEmpty() && !imagesViewModel.noMore.value) {
                                         LaunchedEffect(Unit) {
                                             scope.launch(Dispatchers.IO) {
-                                                withIO { viewModel.moreAsync(context, tagsViewModel) }
+                                                withIO { imagesViewModel.moreAsync(context, tagsViewModel) }
                                             }
                                         }
                                     }
-                                    LoadMoreRefreshContent(viewModel.noMore.value)
+                                    LoadMoreRefreshContent(imagesViewModel.noMore.value)
                                 }
                                 item(
                                     span = { GridItemSpan(maxLineSpan) },
@@ -510,7 +388,7 @@ fun ImagesPage(
                             }
                         }
                     } else {
-                        NoDataColumn(loading = viewModel.showLoading.value, search = viewModel.showSearchBar.value)
+                        NoDataColumn(loading = imagesViewModel.showLoading.value, search = imagesViewModel.showSearchBar.value)
                     }
                 }
             }
@@ -523,35 +401,20 @@ fun ImagesPage(
         tagsState = tagsState,
         onRenamed = {
             scope.launch(Dispatchers.IO) {
-                viewModel.loadAsync(context, tagsViewModel)
+                imagesViewModel.loadAsync(context, tagsViewModel)
             }
         },
         deleteAction = { item ->
             scope.launch(Dispatchers.IO) {
-                viewModel.delete(context, tagsViewModel, setOf(item.mediaId))
+                imagesViewModel.delete(context, tagsViewModel, setOf(item.mediaId))
                 previewerState.closeTransform()
             }
         },
         onTagsChanged = {
             scope.launch(Dispatchers.IO) {
-                viewModel.refreshTabsAsync(context, tagsViewModel)
+                imagesViewModel.refreshTabsAsync(context, tagsViewModel)
             }
         }
     )
 }
 
-@Composable
-fun getPageTitle(viewModel: ImagesViewModel, castViewModel: CastViewModel, bucket: DMediaBucket?, dragSelectState: DragSelectState): String {
-    val imageName = bucket?.name ?: stringResource(id = R.string.images)
-    return if (castViewModel.castMode.value) {
-        stringResource(id = R.string.cast_mode) + " - " + CastPlayer.currentDevice?.description?.device?.friendlyName
-    } else if (dragSelectState.selectMode) {
-        LocaleHelper.getStringF(R.string.x_selected, "count", dragSelectState.selectedIds.size)
-    } else if (viewModel.tag.value != null) {
-        imageName + " - " + viewModel.tag.value!!.name
-    } else if (viewModel.trash.value) {
-        stringResource(id = R.string.images) + " - " + stringResource(id = R.string.trash)
-    } else {
-        imageName
-    }
-}

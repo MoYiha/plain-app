@@ -10,8 +10,6 @@ import com.ismartcoding.plain.features.Permissions
 
 enum class AppFeatureType {
     SOCIAL,
-    EDUCATION,
-    HARDWARE,
     APPS,
     FILES,
     CALLS,
@@ -19,8 +17,7 @@ enum class AppFeatureType {
     SMS,
     NOTIFICATIONS,
     CHECK_UPDATES,
-    MEDIA_TRASH,
-    EXCHANGE_RATE;
+    MEDIA_TRASH;
 
     fun has(): Boolean {
         when (this) {
@@ -32,10 +29,6 @@ enum class AppFeatureType {
             }
             APPS -> {
                 return BuildConfig.CHANNEL != AppChannelType.GOOGLE.name
-            }
-
-            EXCHANGE_RATE, EDUCATION, HARDWARE -> {
-                return BuildConfig.DEBUG && !TempData.demoMode
             }
 
             CHECK_UPDATES -> {

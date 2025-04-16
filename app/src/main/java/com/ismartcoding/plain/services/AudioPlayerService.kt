@@ -52,13 +52,11 @@ class AudioPlayerService : MediaLibraryService() {
                     withIO { AudioPlayingPreference.putAsync(context, mediaItem.mediaId) }
                     AudioPlayer.setChangedNotify(AudioAction.MEDIA_ITEM_TRANSITION)
                 }
-            } else if (events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
-                LogCat.d("onEvents: EVENT_IS_PLAYING_CHANGED")
-                AudioPlayer.setChangedNotify(AudioAction.PLAYBACK_STATE_CHANGED)
-            } else if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED)) {
-                LogCat.d("onEvents: EVENT_PLAYBACK_STATE_CHANGED")
-                AudioPlayer.setChangedNotify(AudioAction.PLAYBACK_STATE_CHANGED)
             }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            LogCat.d("onIsPlayingChanged: $isPlaying")
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
