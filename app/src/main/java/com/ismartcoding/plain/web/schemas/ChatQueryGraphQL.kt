@@ -1,11 +1,18 @@
 package com.ismartcoding.plain.web.schemas
 
+import com.ismartcoding.lib.channel.sendEvent
 import com.ismartcoding.lib.kgraphql.schema.dsl.SchemaBuilder
+import com.ismartcoding.plain.MainApp
+import com.ismartcoding.plain.chat.ChatCacheManager
+import com.ismartcoding.plain.chat.ChatDbHelper
 import com.ismartcoding.plain.db.AppDatabase
+import com.ismartcoding.plain.events.PeerUpdatedEvent
+import com.ismartcoding.plain.helpers.TimeHelper
 import com.ismartcoding.plain.ui.page.appfiles.AppFileDisplayNameHelper
 import com.ismartcoding.plain.web.models.ChatChannel
 import com.ismartcoding.plain.web.models.ChatChannelMember
 import com.ismartcoding.plain.web.models.ChatItem
+import com.ismartcoding.plain.web.models.ID
 import com.ismartcoding.plain.web.models.Peer
 import com.ismartcoding.plain.web.models.toModel
 
@@ -31,6 +38,29 @@ fun SchemaBuilder.addChatQuerySchema() {
     query("peers") {
         resolver { ->
             AppDatabase.instance.peerDao().getAll().map { it.toModel() }
+        }
+    }
+    mutation("deletePeer") {
+        resolver { id: ID ->
+            val peerId = id.value
+            val peerDao = AppDatabase.instance.peerDao()
+            val peer = peerDao.getById(peerId) ?: return@resolver true
+            ChatDbHelper.deleteAllChatsByPeerAsync(MainApp.instance, peerId)
+            val isChannelMember =
+                AppDatabase.instance.chatChannelDao().getAll().any { it.hasMember(peerId) }
+            if (isChannelMember) {
+                val updated = peer.apply {
+                    key = ""
+                    status = "channel"
+                    updatedAt = TimeHelper.now()
+                }
+                peerDao.update(updated)
+                sendEvent(PeerUpdatedEvent(updated))
+            } else {
+                peerDao.delete(peerId)
+            }
+            ChatCacheManager.loadKeyCacheAsync()
+            true
         }
     }
     query("latestChatItems") {
